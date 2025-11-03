@@ -72,22 +72,7 @@ public class AggregationService {
                     ? CompletableFuture.supplyAsync(() -> nytClient.search(searchQuery, currentPage, size), executor)
                     : CompletableFuture.completedFuture(new NewsApiResult(0, 0, Collections.emptyList()));
 
-
-//            CompletableFuture<List<NewsArticle>> nytFuture = CompletableFuture.supplyAsync(
-//                    () -> {
-//                        if (nytEnabled) {
-//                            try {
-//                                int nytPage = Math.max(0, currentPage - 1);
-//                                return nytClient.search(searchQuery, nytPage, size);
-//                            } catch (Exception e) {
-//                                log.warn("NYT API failed: {}", e.getMessage());
-//                            }
-//                        }
-//                        return Collections.emptyList();
-//                    }, executor
-//            );
-
-            // 🧠 Wait for both to complete in parallel
+            // Wait for both to complete in parallel
             CompletableFuture.allOf(guardianFuture, nytFuture).join();
 
             NewsApiResult guardianResult = guardianFuture.join();
@@ -122,35 +107,15 @@ public class AggregationService {
                 .values().stream()
                 .sorted(Comparator.comparing(NewsArticle::publishedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
-//        int totalArticles = uniqueArticles.size();
-//        int totalPages = (totalArticles == 0) ? 0 : (int) Math.ceil((double) totalArticles / size);
-//        Integer prevPage = (currentPage > 1) ? currentPage - 1 : null;
-//        Integer nextPage = (currentPage < totalPages) ? currentPage + 1 : null;
 
         // Compute totals
         int totalArticles = guardianTotal + nytTotal;
         int totalPages = Math.max(guardianPages, nytPages);
 
-        // ✅ Paginate the combined list locally for UI (in case totalPages isn't perfect)
-        int fromIndex = Math.min((currentPage - 1) * size, uniqueArticles.size());
-        int toIndex = Math.min(fromIndex + size, uniqueArticles.size());
-        List<NewsArticle> paginatedArticles = uniqueArticles.subList(fromIndex, toIndex);
-
         Integer prevPage = (currentPage > 1) ? currentPage - 1 : null;
         Integer nextPage = (currentPage < totalPages) ? currentPage + 1 : null;
 
         List<NewsArticle> limitedArticles = uniqueArticles.stream().limit(size).toList();
-
-        // Data for UI
-        List<String> articleUrls = limitedArticles.stream()
-                .map(NewsArticle::url)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        List<String> headlines = limitedArticles.stream()
-                .map(a -> a.title() != null ? a.title() : a.description())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
 
         long timeTaken = Duration.between(startTime, Instant.now()).toMillis();
 
@@ -166,9 +131,7 @@ public class AggregationService {
                 nextPage,
                 usedOffline,
                 timeTaken,
-                limitedArticles,
-                articleUrls,
-                headlines
+                limitedArticles
         );
     }
 

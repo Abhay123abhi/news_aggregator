@@ -50,18 +50,18 @@ public class NytClient {
 
             List<NewsArticle> articles = new ArrayList<>(docs.size());
             for (Map<String, Object> doc : docs) {
-                // ✅ Extract title
+                //Extract title
                 Map<String, Object> headline = (Map<String, Object>) doc.get("headline");
                 String title = headline != null ? (String) headline.getOrDefault("main", null) : null;
 
-                // ✅ Extract description/snippet
+                // Extract description/snippet
                 String description = (String) doc.getOrDefault("abstract", doc.get("snippet"));
 
-                // ✅ Extract URL & published date
+                // Extract URL & published date
                 String webUrl = (String) doc.getOrDefault("web_url", null);
                 String publishedAt = (String) doc.getOrDefault("pub_date", null);
 
-                // ✅ Extract image URL (thumbnail preferred)
+                // Extract image URL (thumbnail preferred)
                 String imageUrl = null;
                 try {
                     Map<String, Object> multimedia = (Map<String, Object>) doc.get("multimedia");
@@ -75,7 +75,7 @@ public class NytClient {
                 } catch (ClassCastException ignored) {
                 }
 
-                // ✅ Fallback if no image found
+                // Fallback if no image found
                 if (imageUrl == null || imageUrl.isEmpty()) {
                     imageUrl = "https://placehold.co/600x400?text=News+Image";
                 }
