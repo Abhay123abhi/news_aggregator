@@ -5,13 +5,6 @@ pipeline {
         IMAGE_NAME = 'news-aggregator:local'
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Abhay123abhi/news_aggregator.git'
-            }
-        }
-
         stage('Build Backend') {
             steps {
                 dir('backend') {
