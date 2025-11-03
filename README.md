@@ -80,12 +80,26 @@ The application demonstrates:
    mvn clean install
    mvn spring-boot:run
 
-<img width="1883" height="865" alt="image" src="https://github.com/user-attachments/assets/66db8156-5d27-49dc-88d2-209f4a4d6a3b" />
-
-
-   Service will be available at:
+   Backend Service will be available at:
    http://localhost:8080
+
+   Frontend Service will be available at:
+   http://localhost:3000
 
    **Docker Instructions**
    docker build -t news-aggregator:latest.
    docker run -d -p 8080:8080 --name news-aggregator news-aggregator:latest
+
+## Swagger / OpenAPI Documentation
+   Once the application is running, you can explore and test APIs via Swagger UI.
+
+   **Open Swagger UI**
+   http://localhost:8080/swagger-ui/index.html
+
+## Jenkins Setup
+
+   **open Jenkins at at build and deploy to test locally**
+   http://localhost:8081/job/news-aggregator-pipeline/8/console
+   
+
+   <img width="1883" height="865" alt="image" src="https://github.com/user-attachments/assets/66db8156-5d27-49dc-88d2-209f4a4d6a3b" />
