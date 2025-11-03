@@ -6,7 +6,19 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Abhay123abhi/news_aggregator.git'
+            }
+        }
+
         stage('Build Backend') {
+            agent {
+                docker {
+                    image 'maven:3.9.9-eclipse-temurin-17'
+                    args '-v /root/.m2:/root/.m2'
+                }
+            }
             steps {
                 dir('backend') {
                     sh 'mvn clean package -DskipTests'
@@ -15,6 +27,11 @@ pipeline {
         }
 
         stage('Build Frontend') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                }
+            }
             steps {
                 dir('frontend') {
                     sh 'npm install'
