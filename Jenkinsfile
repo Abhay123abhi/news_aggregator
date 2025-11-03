@@ -13,21 +13,21 @@ pipeline {
         }
 
         stage('Build Backend') {
-                    steps {
-                        dir('backend') {
-                            sh 'mvn clean package -DskipTests'
-                        }
-                    }
+            steps {
+                dir('backend') {
+                    sh 'mvn clean package -DskipTests'
                 }
+            }
+        }
 
-                stage('Build Frontend') {
-                    steps {
-                        dir('frontend') {
-                            sh 'npm install'
-                            sh 'npm run build'
-                        }
-                    }
+        stage('Build Frontend') {
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
                 }
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
@@ -40,14 +40,14 @@ pipeline {
                 sh 'docker-compose up -d'
             }
         }
-         post {
-                success {
-                    echo "✅ Application successfully deployed on Docker (http://localhost:8080)"
-                }
-                failure {
-                    echo "❌ Build failed! Check logs in Jenkins console."
-                }
-            }
-    }
-}
+    } // ✅ CLOSE stages block here
 
+    post {
+        success {
+            echo "✅ Application successfully deployed on Docker (http://localhost:8080)"
+        }
+        failure {
+            echo "❌ Build failed! Check logs in Jenkins console."
+        }
+    }
+} // ✅ CLOSE pipeline block here
