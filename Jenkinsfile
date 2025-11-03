@@ -6,10 +6,18 @@ pipeline {
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Abhay123abhi/news_aggregator.git'
+            }
+        }
+
         stage('Build Backend') {
             steps {
                 dir('backend') {
-                    sh 'docker run --rm -v $PWD:/app -w /app maven:3.9.9-eclipse-temurin-17 mvn clean package -DskipTests'
+                    // Use Maven installed in Jenkins (no Docker for Maven)
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
@@ -17,19 +25,22 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v $PWD:/app -w /app node:18-alpine sh -c "npm install && npm run build"'
+                    // Build frontend using Node inside Docker
+                    sh 'docker run --rm -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"'
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
+                // Build combined Docker image for backend + frontend
                 sh 'docker build -t ${IMAGE_NAME} .'
             }
         }
 
         stage('Run Container') {
             steps {
+                // Start the app using docker-compose
                 sh 'docker-compose up -d'
             }
         }
