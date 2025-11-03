@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: news-aggregator:local
+    container_name: news-aggregator
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    container_name: jenkins
+    user: root
+    ports:
+      - "8081:8080"    # Jenkins UI
+      - "50000:50000"  # Jenkins agent
+    volumes:
+      # Jenkins data (local persistent storage)
+      - ./jenkins/jenkins_home:/var/jenkins_home
+
+      # Mount your codebases so Jenkins can build them
+      - ./backend:/var/jenkins_home/workspace/backend
+      - ./frontend:/var/jenkins_home/workspace/frontend
+
+      # Allow Jenkins to use Docker from host
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

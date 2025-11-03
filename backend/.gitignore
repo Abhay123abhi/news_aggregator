@@ -1,0 +1,16 @@
+
+target/
+*.jar
+*.war
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+
+# Environment
+application.properties
+application.yml
+.env

@@ -1,0 +1,25 @@
+# Node & Java builds
+node_modules/
+target/
+build/
+dist/
+
+# IDE & System
+.idea/
+.vscode/
+*.iml
+*.class
+*.log
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Docker & Jenkins volumes
+docker-data/
+jenkins/jenkins_home/
+
+# Misc
+*.tmp
+"jenkins_home/" 
