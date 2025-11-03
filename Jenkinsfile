@@ -9,14 +9,13 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/Abhay123abhi/news_aggregator.git'
+                git branch: 'main', url: 'https://github.com/Abhay123abhi/news_aggregator.git'
             }
         }
 
         stage('Build Backend') {
             steps {
                 dir('backend') {
-                    // Use Maven installed in Jenkins (no Docker for Maven)
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -25,7 +24,6 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    // Build frontend using Node inside Docker
                     sh 'docker run --rm -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"'
                 }
             }
@@ -33,14 +31,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Build combined Docker image for backend + frontend
                 sh 'docker build -t ${IMAGE_NAME} .'
             }
         }
 
         stage('Run Container') {
             steps {
-                // Start the app using docker-compose
                 sh 'docker-compose up -d'
             }
         }
