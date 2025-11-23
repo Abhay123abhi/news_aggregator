@@ -21,18 +21,17 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                dir('backend') {
-                    sh """
-                        echo "Building backend with Maven Docker..."
-                        docker run --rm \\
-                        -v ${env.WORKSPACE}/backend:/app \\
-                        -w /app \\
-                        maven:3.9-eclipse-temurin-17 \\
-                        mvn clean package -DskipTests
-                    """
-                }
+                sh 'ls -la ${env.WORKSPACE}/backend'   // Debug: check if POM exists
+                sh """
+                    docker run --rm \\
+                    -v ${env.WORKSPACE}/backend:/app \\
+                    -w /app \\
+                    maven:3.9-eclipse-temurin-17 \\
+                    mvn clean package -DskipTests
+                """
             }
         }
+
 
 
 
