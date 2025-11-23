@@ -12,45 +12,23 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Abhay123abhi/news_aggregator.git'
             }
         }
-        stage('Print Workspace') {
-                    steps {
-                        sh 'pwd'
-                        sh 'ls -la'
-                    }
-                }
 
         stage('Build Backend') {
             steps {
-                sh 'ls -la ${env.WORKSPACE}/backend'   // Debug: check if POM exists
-                sh """
-                    docker run --rm \\
-                    -v ${env.WORKSPACE}/backend:/app \\
-                    -w /app \\
-                    maven:3.9-eclipse-temurin-17 \\
-                    mvn clean package -DskipTests
-                """
+                dir('backend') {
+                    sh 'mvn clean package -DskipTests'
+                }
             }
         }
-
-
-
 
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh """
-                        echo "Building frontend with Node Docker..."
-                        docker run --rm \\
-                        -v ${env.WORKSPACE}/frontend:/app \\
-                        -w /app \\
-                        node:18-alpine \\
-                        sh -c "npm install && npm run build"
-                    """
+                    sh 'npm install'
+                    sh 'npm run build'
                 }
             }
         }
-
-
 
         stage('Build Docker Image') {
             steps {
