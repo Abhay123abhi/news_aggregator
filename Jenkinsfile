@@ -12,6 +12,12 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Abhay123abhi/news_aggregator.git'
             }
         }
+        stage('Print Workspace') {
+                    steps {
+                        sh 'pwd'
+                        sh 'ls -la'
+                    }
+                }
 
         stage('Build Backend') {
             steps {
@@ -33,7 +39,7 @@ pipeline {
                 dir('frontend') {
                     sh '''
                         docker run --rm \
-                        -v $(pwd):/app \
+                        -v $PWD:/app \
                         -w /app \
                         node:18-alpine \
                         sh -c "npm install && npm run build"
