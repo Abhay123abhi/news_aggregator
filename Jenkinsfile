@@ -18,7 +18,7 @@ pipeline {
                 dir('backend') {
                     sh '''
                         docker run --rm \
-                        -v $pwd:/app \
+                        -v $PWD:/app \
                         -w /app \
                         maven:3.9-eclipse-temurin-17 \
                         mvn clean package -DskipTests
