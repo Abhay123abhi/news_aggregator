@@ -4,10 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = 'news-aggregator:local'
     }
-    tools {
-        maven 'Maven_3'
-    }
-
 
     stages {
 
@@ -20,6 +16,7 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('backend') {
+                    sh 'mvn -version'
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -28,13 +25,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        docker run --rm \
-                        -v $PWD:/app \
-                        -w /app \
-                        node:18-alpine \
-                        sh -c "npm install && npm run build"
-                    '''
+                    sh 'docker run --rm -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"'
                 }
             }
         }
@@ -44,20 +35,14 @@ pipeline {
                 sh 'docker build -t ${IMAGE_NAME} .'
             }
         }
-
-//         stage('Run Container') {
-//             steps {
-//                 sh 'docker-compose up -d'
-//             }
-//         }
     }
 
     post {
         success {
-            echo "✅ Application successfully deployed on Docker (http://localhost:8080)"
+            echo "✅ Application successfully deployed on Docker"
         }
         failure {
-            echo "❌ Build failed! Check logs in Jenkins console."
+            echo "❌ Build failed! Check logs."
         }
     }
 }
