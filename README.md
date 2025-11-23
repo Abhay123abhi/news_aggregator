@@ -31,8 +31,8 @@ The application demonstrates:
 3. **Cache Layer (Redis Offline Cache)**  
    - Uses Spring Cache + Redis with @Cacheable and @CachePut.
    - Cached per keyword using key format:
-      offlineCache::sports
-      offlineCache::india
+      'offlineCache::sports'
+      'offlineCache::india'
    - Redis TTL configured for 6 hours.
    - user explicitly requests offline mode.
    - No JSON files — cache fully in Redis
