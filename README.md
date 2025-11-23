@@ -28,10 +28,12 @@ The application demonstrates:
    - Merges, normalizes, and removes duplicates based on URL and title similarity.
    - Returns combined, paginated results to frontend.
 
-3. **Cache Service (Offline Mode)**  
-   - Saves API responses as JSON files on disk for offline availability.  
-   - Automatically deletes stale cache entries older than 1 hour.  
-   - Used when external APIs are unavailable.
+3. **Cache Layer (Redis Offline Cache)**  
+   - Uses Spring Cache + Redis with @Cacheable and @CachePut.
+   - Cached per keyword using key format: offlineCache::<keyword>
+   - Redis TTL configured for 6 hours.
+   - user explicitly requests offline mode.
+   - No JSON files — cache fully in Redis
 
 4. **CI/CD Pipeline (Jenkins)**  
    - Automatically clones the GitHub repository.  
