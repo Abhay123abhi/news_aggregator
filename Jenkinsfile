@@ -18,7 +18,7 @@ pipeline {
                 dir('backend') {
                     sh '''
                         docker run --rm \
-                        -v $PWD:/app \
+                        -v $(pwd):/app \
                         -w /app \
                         maven:3.9-eclipse-temurin-17 \
                         mvn clean package -DskipTests
@@ -33,7 +33,7 @@ pipeline {
                 dir('frontend') {
                     sh '''
                         docker run --rm \
-                        -v $PWD:/app \
+                        -v $(pwd):/app \
                         -w /app \
                         node:18-alpine \
                         sh -c "npm install && npm run build"
