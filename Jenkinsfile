@@ -16,6 +16,7 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('backend') {
+                    sh 'mvn -version'
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -35,11 +36,11 @@ pipeline {
             }
         }
 
-        stage('Run Container') {
-            steps {
-                sh 'docker-compose up -d'
-            }
-        }
+//         stage('Run Container') {
+//             steps {
+//                 sh 'docker-compose up -d'
+//             }
+//         }
     }
 
     post {

@@ -24,9 +24,7 @@ services:
 
 
   jenkins:
-    build:
-      context: ./jenkins
-      dockerfile: Dockerfile
+    image: jenkins/jenkins:lts-jdk17
     container_name: jenkins
     user: root
     ports:
@@ -35,10 +33,6 @@ services:
     volumes:
       # Jenkins data (local persistent storage)
       - ./jenkins/jenkins_home:/var/jenkins_home
-
-      # Mount your codebases so Jenkins can build them
-      - ./backend:/var/jenkins_home/workspace/backend
-      - ./frontend:/var/jenkins_home/workspace/frontend
 
       # Allow Jenkins to use Docker from host
       - /var/run/docker.sock:/var/run/docker.sock
