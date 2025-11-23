@@ -22,31 +22,35 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('backend') {
-                    sh '''
-                        docker run --rm \
-                        -v $PWD:/app \
-                        -w /app \
-                        maven:3.9-eclipse-temurin-17 \
+                    sh """
+                        echo "Building backend with Maven Docker..."
+                        docker run --rm \\
+                        -v ${env.WORKSPACE}/backend:/app \\
+                        -w /app \\
+                        maven:3.9-eclipse-temurin-17 \\
                         mvn clean package -DskipTests
-                    '''
+                    """
                 }
             }
         }
+
 
 
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        docker run --rm \
-                        -v $PWD:/app \
-                        -w /app \
-                        node:18-alpine \
+                    sh """
+                        echo "Building frontend with Node Docker..."
+                        docker run --rm \\
+                        -v ${env.WORKSPACE}/frontend:/app \\
+                        -w /app \\
+                        node:18-alpine \\
                         sh -c "npm install && npm run build"
-                    '''
+                    """
                 }
             }
         }
+
 
 
         stage('Build Docker Image') {
