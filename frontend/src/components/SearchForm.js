@@ -2,7 +2,7 @@ import React from 'react';
 import newsApi from '../api/newsApi';
 
 export default function SearchForm({ onResults }) {
-  const [q, setQ] = React.useState('apple');
+  const [q, setQ] = React.useState('latest-news');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
   const [offline, setOffline] = React.useState(false);
