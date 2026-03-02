@@ -37,6 +37,24 @@ The application demonstrates:
    - user explicitly requests offline mode.
    - No JSON files — cache fully in Redis
 
+   ### Development Setup (Current)
+   - Redis runs locally using **WSL (Ubuntu)**.
+   - Spring Boot connects via:
+     ```
+     spring.data.redis.host=localhost
+     spring.data.redis.port=6379
+     ```
+   - Suitable for local testing and development.
+
+   ### Production-Ready Approach (Scalable)
+   For large-scale / millions of users:
+   - Use **Redis Cluster** for horizontal scaling
+   - Or run Redis via **Docker container**
+   - Or use managed Redis services:
+      - AWS ElastiCache
+      - Azure Cache for Redis
+      - Redis Cloud
+
 4. **CI/CD Pipeline (Jenkins)**  
    - Automatically clones the GitHub repository.  
    - Builds the project using Maven.  
