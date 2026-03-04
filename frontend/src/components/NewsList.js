@@ -1,219 +1,193 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
 
-export default function NewsList({ data, onPageChange }) {
-  const articles = data.articles || [];
+export default function NewsList({
+  data,
+  loading,
+  isOffline,
+  onPageChange,
+}) {
+  const [darkMode, setDarkMode] = useState(false);
+
+  const articles = data?.articles || [];
+
+  useEffect(() => {
+    document.body.style.margin = 0;
+    document.body.style.transition = "background 0.4s ease";
+    document.body.style.background = darkMode
+      ? "linear-gradient(135deg, #0b1120, #020617)"
+      : "linear-gradient(135deg, #f1f5f9, #e2e8f0)";
+  }, [darkMode]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= data.totalPages) {
-      onPageChange(newPage);
+      onPageChange(data.searchKeyword, newPage);
     }
   };
 
+  const theme = {
+    cardBg: darkMode ? "#111827" : "#ffffff",
+    text: darkMode ? "#f8fafc" : "#0f172a",
+    subText: darkMode ? "#94a3b8" : "#475569",
+    heroBg: darkMode
+      ? "linear-gradient(90deg, #0f172a, #1e293b)"
+      : "linear-gradient(90deg, #2563eb, #4f46e5)",
+  };
+
   return (
-    <div
-      style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: '20px 24px',
-        backgroundColor: '#f9fafb',
-        minHeight: '100vh',
-      }}
-    >
-      {/* Summary Header */}
+    <div style={{ minHeight: "100vh", color: theme.text }}>
+
+      {/* OFFLINE BANNER */}
+      {isOffline && (
+        <div
+          style={{
+            background: "#f59e0b",
+            color: "white",
+            padding: 8,
+            textAlign: "center",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          ⚠ Offline Mode – Showing cached results
+        </div>
+      )}
+
+      {/* HERO */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: 12,
-          padding: '14px 20px',
-          marginBottom: 24,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+          background: theme.heroBg,
+          color: "white",
+          padding: "30px 15px",
+          textAlign: "center",
         }}
       >
-        <div><b>Keyword:</b> {data.searchKeyword}</div>
-        <div><b>Time Taken:</b> {data.timeTakenMs} ms</div>
-        <div><b>Total Pages:</b> {data.totalPages}</div>
+        <h1 style={{ marginBottom: 10 }}>
+          📰 Smart News Explorer
+        </h1>
+
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: "6px 16px",
+            borderRadius: 20,
+            border: "none",
+            cursor: "pointer",
+            background: darkMode ? "#f8fafc" : "#0f172a",
+            color: darkMode ? "#0f172a" : "#ffffff",
+          }}
+        >
+          {darkMode ? "Light" : "Dark"} Mode
+        </button>
       </div>
 
-      {/* Articles List */}
+      {/* GRID */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: 24,
+          maxWidth: 1200,
+          margin: "40px auto",
+          padding: "0 20px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 25,
         }}
       >
-        {articles.map((a, i) => (
-          <div
-            key={a.url || i}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: 12,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              border: '1px solid #e5e7eb',
-              overflow: 'hidden',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 6px 14px rgba(0,0,0,0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-            }}
-          >
-            {/* Image */}
-            {a.imageUrl ? (
-              <img
-                src={a.imageUrl}
-                alt={a.title}
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
                 style={{
-                  width: '100%',
-                  height: 200,
-                  objectFit: 'cover',
-                  borderBottom: '1px solid #f1f5f9',
+                  backgroundColor: theme.cardBg,
+                  borderRadius: 16,
+                  height: 280,
+                  animation: "pulse 1.5s infinite ease-in-out",
                 }}
               />
-            ) : (
+            ))
+          : articles.map((a, i) => (
               <div
+                key={a.url || i}
                 style={{
-                  height: 200,
-                  backgroundColor: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#94a3b8',
-                  fontSize: 14,
-                  fontStyle: 'italic',
+                  backgroundColor: theme.cardBg,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  boxShadow: darkMode
+                    ? "0 8px 20px rgba(0,0,0,0.5)"
+                    : "0 8px 20px rgba(0,0,0,0.1)",
                 }}
               >
-                No Image Available
+                <img
+                  src={a.imageUrl || "https://placehold.co/600x400"}
+                  alt={a.title}
+                  style={{ width: "100%", height: 200, objectFit: "cover" }}
+                />
+
+                <div style={{ padding: 16 }}>
+                  <h3>{a.title}</h3>
+                  {a.description && (
+                    <p style={{ fontSize: 13, color: theme.subText }}>
+                      {a.description.substring(0, 120)}...
+                    </p>
+                  )}
+
+                  <a
+                    href={a.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "inline-block",
+                      marginTop: 10,
+                      background: "#2563eb",
+                      color: "white",
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      textDecoration: "none",
+                      fontSize: 13,
+                    }}
+                  >
+                    Read More →
+                  </a>
+                </div>
               </div>
-            )}
-
-            {/* Content */}
-            <div style={{ padding: 16 }}>
-              <div
-                style={{
-                  fontSize: 17,
-                  fontWeight: 600,
-                  color: '#1e293b',
-                  marginBottom: 8,
-                  lineHeight: 1.4,
-                }}
-              >
-                {a.title}
-              </div>
-
-              {a.description && (
-                <p
-                  style={{
-                    fontSize: 14,
-                    color: '#475569',
-                    marginBottom: 12,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {a.description.length > 120
-                    ? a.description.substring(0, 120) + '...'
-                    : a.description}
-                </p>
-              )}
-
-              <a
-                href={a.url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-block',
-                  backgroundColor: '#2563eb',
-                  color: '#fff',
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                Read Full Article →
-              </a>
-
-              <div
-                style={{
-                  fontSize: 12,
-                  color: '#64748b',
-                  marginTop: 10,
-                  borderTop: '1px solid #f1f5f9',
-                  paddingTop: 8,
-                }}
-              >
-                <b>Source:</b> {a.source} <br />
-                <b>Published:</b>{' '}
-                {new Date(a.publishedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
+            ))}
       </div>
 
-      {/* Pagination */}
-      <div
-        style={{
-          marginTop: 32,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 12,
-          fontSize: 15,
-          color: '#334155',
-        }}
-      >
-        <button
-          onClick={() => handlePageChange(data.page - 1)}
-          disabled={data.page <= 1}
+      {/* PAGINATION */}
+      {!loading && data?.totalPages > 1 && (
+        <div
           style={{
-            backgroundColor: data.page <= 1 ? '#cbd5e1' : '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            padding: '8px 14px',
-            cursor: data.page <= 1 ? 'not-allowed' : 'pointer',
-            fontWeight: 500,
+            display: "flex",
+            justifyContent: "center",
+            gap: 20,
+            paddingBottom: 40,
           }}
         >
-          ← Prev
-        </button>
+          <button
+            onClick={() => handlePageChange(data.page - 1)}
+            disabled={data.page <= 1}
+          >
+            ← Prev
+          </button>
 
-        <span>
-          <b>Page:</b> {data.page} / {data.totalPages}
-        </span>
+          <span>
+            {data.page} / {data.totalPages}
+          </span>
 
-        <button
-          onClick={() => handlePageChange(data.page + 1)}
-          disabled={data.page >= data.totalPages}
-          style={{
-            backgroundColor:
-              data.page >= data.totalPages ? '#cbd5e1' : '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            padding: '8px 14px',
-            cursor: data.page >= data.totalPages ? 'not-allowed' : 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          Next →
-        </button>
-      </div>
+          <button
+            onClick={() => handlePageChange(data.page + 1)}
+            disabled={data.page >= data.totalPages}
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
+      <style>
+        {`@keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
+        }`}
+      </style>
     </div>
   );
 }

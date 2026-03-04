@@ -1,98 +1,96 @@
-package com.example.news.client;
+package com.example.news.client.nyt;
 
+import com.example.news.client.NewsProviderClient;
 import com.example.news.model.NewsApiResult;
 import com.example.news.model.NewsArticle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.*;
 
+@Slf4j
 @Component
-public class NytClient {
+@RequiredArgsConstructor
+public class NytClient implements NewsProviderClient {
 
-    private static final Logger log = LoggerFactory.getLogger(NytClient.class);
-    private static final String BASE_URL = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final com.example.news.client.nyt.NytFeignClient feignClient;
+
     @Value("${nyt.api.key}")
     private String apiKey;
 
+    @Override
+    public String getProviderName() {
+        return "NYT";
+    }
+
+    @Override
     public NewsApiResult search(String keyword, int page, int pageSize) {
+
         if (apiKey == null || apiKey.isBlank()) {
-            log.debug("NYT API key is missing");
-            return new NewsApiResult(0, 0, Collections.emptyList());
+            log.warn("NYT API key missing");
+            return emptyResult();
         }
+
         try {
-            int currentPage = Math.max(0, page - 1);
-            String url = UriComponentsBuilder.fromHttpUrl(BASE_URL)
-                    .queryParam("q", keyword)
-                    .queryParam("page", currentPage)
-                    .queryParam("api-key", apiKey)
-                    .toUriString();
+            Map<String, Object> responseMap =
+                    feignClient.search(keyword, Math.max(0, page - 1), apiKey);
 
-            Map<?, ?> responseMap = restTemplate.getForObject(url, Map.class);
-            if (responseMap == null || !responseMap.containsKey("response")) {
-                log.debug("NYT returned no response for '{}'", keyword);
-                return new NewsApiResult(0, 0, Collections.emptyList());
-            }
+            Map<String, Object> response =
+                    (Map<String, Object>) responseMap.get("response");
 
-            Map<String, Object> response = (Map<String, Object>) responseMap.get("response");
-            Map<String, Object> meta = (Map<String, Object>) response.getOrDefault("meta", Collections.emptyMap());
+            Map<String, Object> meta =
+                    (Map<String, Object>) response.getOrDefault("meta", Collections.emptyMap());
 
             int totalResults = (int) meta.getOrDefault("hits", 0);
             int totalPages = (int) Math.ceil(totalResults / (double) pageSize);
 
-            List<Map<String, Object>> docs = (List<Map<String, Object>>) response.getOrDefault("docs", Collections.emptyList());
+            List<Map<String, Object>> docs =
+                    (List<Map<String, Object>>) response.getOrDefault("docs", Collections.emptyList());
 
-            List<NewsArticle> articles = new ArrayList<>(docs.size());
+            List<NewsArticle> articles = new ArrayList<>();
+
             for (Map<String, Object> doc : docs) {
-                //Extract title
                 Map<String, Object> headline = (Map<String, Object>) doc.get("headline");
-                String title = headline != null ? (String) headline.getOrDefault("main", null) : null;
 
-                // Extract description/snippet
-                String description = (String) doc.getOrDefault("abstract", doc.get("snippet"));
+                Map<String, Object> multimedia =
+                        (Map<String, Object>) doc.get("multimedia");
 
-                // Extract URL & published date
-                String webUrl = (String) doc.getOrDefault("web_url", null);
-                String publishedAt = (String) doc.getOrDefault("pub_date", null);
-
-                // Extract image URL (thumbnail preferred)
                 String imageUrl = null;
-                try {
-                    Map<String, Object> multimedia = (Map<String, Object>) doc.get("multimedia");
-                    if (multimedia != null && multimedia.containsKey("thumbnail")) {
-                        Map<String, Object> thumb = (Map<String, Object>) multimedia.get("thumbnail");
-                        imageUrl = (String) thumb.getOrDefault("url", null);
-                    } else if (multimedia != null && multimedia.containsKey("default")) {
-                        Map<String, Object> def = (Map<String, Object>) multimedia.get("default");
-                        imageUrl = (String) def.getOrDefault("url", null);
+
+                if (multimedia != null) {
+                    Map<String, Object> defaultImage =
+                            (Map<String, Object>) multimedia.get("default");
+
+                    if (defaultImage != null) {
+                        imageUrl = (String) defaultImage.get("url");
                     }
-                } catch (ClassCastException ignored) {
                 }
 
-                // Fallback if no image found
-                if (imageUrl == null || imageUrl.isEmpty()) {
-                    imageUrl = "https://placehold.co/600x400?text=News+Image";
+                if (imageUrl == null || imageUrl.isBlank()) {
+                    imageUrl = "https://placehold.co/600x400?text=No+Image";
                 }
 
                 articles.add(new NewsArticle(
-                        title,
-                        description,
-                        webUrl,
+                        headline != null ? (String) headline.get("main") : null,
+                        (String) doc.getOrDefault("abstract", doc.get("snippet")),
+                        (String) doc.get("web_url"),
                         "The New York Times",
-                        publishedAt,
+                        (String) doc.get("pub_date"),
                         imageUrl
                 ));
             }
+
             return new NewsApiResult(totalResults, totalPages, articles);
-        } catch (RestClientException ex) {
-            log.warn("NYTimes API error: {}", ex.getMessage());
-            return new NewsApiResult(0, 0, Collections.emptyList());
+
+        } catch (Exception ex) {
+            log.error("NYT API error", ex);
+            return emptyResult();
         }
+    }
+
+    private NewsApiResult emptyResult() {
+        return new NewsApiResult(0, 0, Collections.emptyList());
     }
 }

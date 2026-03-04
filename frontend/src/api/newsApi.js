@@ -4,9 +4,9 @@ import axios from 'axios';
 const API_BASE = 'http://localhost:8080/api/news';
 
 const newsApi = {
-  async search(keyword, page, pageSize, offline) {
+  async search(q, page, pageSize, offline) {
     const params = {
-      keyword,           
+      q,           
       page,             
       pageSize,         
       offline            

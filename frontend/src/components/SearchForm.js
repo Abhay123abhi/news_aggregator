@@ -1,40 +1,29 @@
-import React from 'react';
-import newsApi from '../api/newsApi';
+import React from "react";
 
-export default function SearchForm({ onResults }) {
-  const [q, setQ] = React.useState('latest-news');
+export default function SearchForm({ onSearch }) {
+  const [q, setQ] = React.useState("latest-news");
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
-  const [offline, setOffline] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [pageSize, setPageSize] = React.useState(10); // ✅ added
 
-  async function doSearch(e) {
-    if (e) e.preventDefault();
-    setLoading(true);
-    try {
-      const resp = await newsApi.search(q, page, pageSize, offline);
-      onResults(resp);
-    } catch (err) {
-      alert('Failed to fetch: ' + err.message);
-    }
-    setLoading(false);
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSearch(q, page, pageSize); // ✅ just added pageSize
   }
 
-  React.useEffect(() => { doSearch(); }, []);
-
   return (
-    <form onSubmit={doSearch} style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 8,
-      alignItems: 'center',
-      marginTop: 20,
-      marginBottom: 20,
-      justifyContent: 'center'
-    }}>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        display: "flex",
+        gap: 10,
+        justifyContent: "center",
+        marginTop: 20,
+        flexWrap: "wrap",
+      }}
+    >
       <input
         value={q}
-        onChange={e => setQ(e.target.value)}
+        onChange={(e) => setQ(e.target.value)}
         placeholder="Keyword"
         style={inputStyle}
       />
@@ -43,45 +32,42 @@ export default function SearchForm({ onResults }) {
         type="number"
         value={page}
         min={1}
-        onChange={e => setPage(Number(e.target.value))}
+        onChange={(e) => setPage(Number(e.target.value))}
         style={{ ...inputStyle, width: 80 }}
       />
-      <input
-        type="number"
+
+      {/* ✅ Page Size Added */}
+      <select
         value={pageSize}
-        min={1}
-        onChange={e => setPageSize(Number(e.target.value))}
-        style={{ ...inputStyle, width: 80 }}
-      />
-      <label style={{ fontSize: 13 }}>
-        <input
-          type="checkbox"
-          checked={offline}
-          onChange={e => setOffline(e.target.checked)}
-        /> Offline
-      </label>
-      <button
-        type="submit"
-        disabled={loading}
-        style={{
-          backgroundColor: '#2563eb',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-          padding: '6px 14px',
-          cursor: 'pointer'
-        }}
+        onChange={(e) => setPageSize(Number(e.target.value))}
+        style={{ ...inputStyle, width: 100 }}
       >
-        {loading ? 'Loading...' : 'Search'}
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={20}>20</option>
+        <option value={50}>50</option>
+      </select>
+
+      <button style={buttonStyle}>
+        Search
       </button>
     </form>
   );
 }
 
 const inputStyle = {
-  border: '1px solid #ccc',
+  border: "1px solid #ccc",
   borderRadius: 6,
-  padding: '6px 10px',
+  padding: "6px 10px",
   minWidth: 120,
-  fontSize: 14
+  fontSize: 14,
+};
+
+const buttonStyle = {
+  backgroundColor: "#2563eb",
+  color: "#fff",
+  border: "none",
+  borderRadius: 6,
+  padding: "6px 14px",
+  cursor: "pointer",
 };

@@ -14,10 +14,10 @@ public class NewsController {
 
     @GetMapping
     public SearchResponse search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer pageSize,
-            @RequestParam(required = false, defaultValue = "false") boolean offline
+            @RequestParam(defaultValue = "latest-news") String keyword,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "false") boolean offline
     ) {
         return service.search(keyword, page, pageSize, offline);
     }
