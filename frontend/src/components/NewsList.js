@@ -92,63 +92,76 @@ export default function NewsList({
         }}
       >
         {loading
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: theme.cardBg,
-                  borderRadius: 16,
-                  height: 280,
-                  animation: "pulse 1.5s infinite ease-in-out",
-                }}
-              />
-            ))
-          : articles.map((a, i) => (
-              <div
-                key={a.url || i}
-                style={{
-                  backgroundColor: theme.cardBg,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  boxShadow: darkMode
-                    ? "0 8px 20px rgba(0,0,0,0.5)"
-                    : "0 8px 20px rgba(0,0,0,0.1)",
-                }}
-              >
-                <img
-                  src={a.imageUrl || "https://placehold.co/600x400"}
-                  alt={a.title}
-                  style={{ width: "100%", height: 200, objectFit: "cover" }}
-                />
+          ? Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                backgroundColor: theme.cardBg,
+                borderRadius: 16,
+                overflow: "hidden",
+                boxShadow: darkMode
+                  ? "0 8px 20px rgba(0,0,0,0.5)"
+                  : "0 8px 20px rgba(0,0,0,0.1)",
+              }}
+            >
+              {/* IMAGE */}
+              <div className="skeleton skeleton-img" />
 
-                <div style={{ padding: 16 }}>
-                  <h3>{a.title}</h3>
-                  {a.description && (
-                    <p style={{ fontSize: 13, color: theme.subText }}>
-                      {a.description.substring(0, 120)}...
-                    </p>
-                  )}
-
-                  <a
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-block",
-                      marginTop: 10,
-                      background: "#2563eb",
-                      color: "white",
-                      padding: "6px 12px",
-                      borderRadius: 6,
-                      textDecoration: "none",
-                      fontSize: 13,
-                    }}
-                  >
-                    Read More →
-                  </a>
-                </div>
+              <div style={{ padding: 16 }}>
+                <div className="skeleton skeleton-title" />
+                <div className="skeleton skeleton-text" />
+                <div className="skeleton skeleton-text" />
+                <div className="skeleton skeleton-text short" />
+                <div className="skeleton skeleton-btn" />
               </div>
-            ))}
+            </div>
+          ))
+          : articles.map((a, i) => (
+            <div
+              key={a.url || i}
+              style={{
+                backgroundColor: theme.cardBg,
+                borderRadius: 16,
+                overflow: "hidden",
+                boxShadow: darkMode
+                  ? "0 8px 20px rgba(0,0,0,0.5)"
+                  : "0 8px 20px rgba(0,0,0,0.1)",
+              }}
+            >
+              <img
+                src={a.imageUrl || "https://placehold.co/600x400"}
+                alt={a.title}
+                style={{ width: "100%", height: 200, objectFit: "cover" }}
+              />
+
+              <div style={{ padding: 16 }}>
+                <h3>{a.title}</h3>
+                {a.description && (
+                  <p style={{ fontSize: 13, color: theme.subText }}>
+                    {a.description.substring(0, 120)}...
+                  </p>
+                )}
+
+                <a
+                  href={a.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: "inline-block",
+                    marginTop: 10,
+                    background: "#2563eb",
+                    color: "white",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    textDecoration: "none",
+                    fontSize: 13,
+                  }}
+                >
+                  Read More →
+                </a>
+              </div>
+            </div>
+          ))}
       </div>
 
       {/* PAGINATION */}
@@ -182,11 +195,54 @@ export default function NewsList({
       )}
 
       <style>
-        {`@keyframes pulse {
-          0% { opacity: 0.6; }
-          50% { opacity: 1; }
-          100% { opacity: 0.6; }
-        }`}
+        {`@keyframes wave {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #e5e7eb 25%,
+    #f3f4f6 37%,
+    #e5e7eb 63%
+  );
+  background-size: 800px 100%;
+  animation: wave 1.6s infinite linear;
+  border-radius: 6px;
+}
+
+.skeleton-img {
+  width: 100%;
+  height: 200px;
+}
+
+.skeleton-title {
+  height: 20px;
+  margin-bottom: 12px;
+  width: 90%;
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.skeleton-text.short {
+  width: 70%;
+}
+
+.skeleton-btn {
+  height: 28px;
+  width: 100px;
+  margin-top: 12px;
+  border-radius: 6px;
+}`}
       </style>
     </div>
   );

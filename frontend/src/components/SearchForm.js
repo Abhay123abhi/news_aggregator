@@ -32,21 +32,24 @@ export default function SearchForm({ onSearch }) {
         type="number"
         value={page}
         min={1}
+        step={1}              // incremental
         onChange={(e) => setPage(Number(e.target.value))}
-        style={{ ...inputStyle, width: 80 }}
+        style={{ ...inputStyle, width: 100 }}
+        placeholder="Page"
       />
 
+
       {/* ✅ Page Size Added */}
-      <select
+      {/* Page Size */}
+      <input
+        type="number"
         value={pageSize}
+        min={1}
+        step={1}              // incremental
         onChange={(e) => setPageSize(Number(e.target.value))}
         style={{ ...inputStyle, width: 100 }}
-      >
-        <option value={5}>5</option>
-        <option value={10}>10</option>
-        <option value={20}>20</option>
-        <option value={50}>50</option>
-      </select>
+        placeholder="Page Size"
+      />
 
       <button style={buttonStyle}>
         Search
