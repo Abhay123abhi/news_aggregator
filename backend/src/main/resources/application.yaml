@@ -33,3 +33,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  level:
+    feign:
+      Logger: DEBUG

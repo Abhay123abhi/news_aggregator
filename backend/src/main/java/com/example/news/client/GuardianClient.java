@@ -37,7 +37,8 @@ public class GuardianClient implements NewsProviderClient {
             Map<String, Object> response =
                     feignClient.search(
                             keyword, Math.max(page, 1),
-                            Math.max(pageSize, 10), "thumbnail,trailText", apiKey
+                            Math.max(pageSize, 10), "thumbnail,trailText",
+                            "newest", "published", apiKey
                     );
 
             Map<String, Object> responseData = (Map<String, Object>) response.get("response");

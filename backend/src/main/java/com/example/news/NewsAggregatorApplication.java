@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCaching
 @SpringBootApplication
 @EnableFeignClients
+@EnableScheduling
 public class NewsAggregatorApplication {
     public static void main(String[] args) {
         SpringApplication.run(NewsAggregatorApplication.class, args);

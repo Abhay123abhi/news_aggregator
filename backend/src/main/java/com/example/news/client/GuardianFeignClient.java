@@ -15,6 +15,8 @@ public interface GuardianFeignClient {
             @RequestParam("page") int page,
             @RequestParam("page-size") int pageSize,
             @RequestParam("show-fields") String fields,
+            @RequestParam("order-by") String orderBy,
+            @RequestParam("order-date") String orderDate,
             @RequestParam("api-key") String apiKey
     );
 }
