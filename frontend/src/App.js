@@ -1,50 +1,54 @@
 import React, { useState } from "react";
+import newsApi from "./api/newsApi";
 import SearchForm from "./components/SearchForm";
 import NewsList from "./components/NewsList";
-import { fetchNewsWithCache } from "./services/newsService";
 
 export default function App() {
-  const [data, setData] = useState(null);
+
+  const [data, setData] = useState({ articles: [] });
+  const [page, setPage] = useState(1);
+  const [keyword, setKeyword] = useState("latest-news");
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const [timeTakenMs, setTimeTakenMs] = useState(null); // ⬅ store API time
 
-  const handleSearch = async (keyword, page = 1, pageSize = 10) => {
+  const searchNews = async (q, p, ps) => {
+
     setLoading(true);
-    setTimeTakenMs(null);
 
-    try {
-      const startTime = Date.now(); // ⬅ start timer
+    const result = await newsApi.search(q, p, ps, false);
 
-      const result = await fetchNewsWithCache(keyword, page, pageSize);
+    setKeyword(q);
+    setPage(p);
+    setPageSize(ps);
 
-      const endTime = Date.now(); // ⬅ end timer
-      setTimeTakenMs(endTime - startTime); // ⬅ calculate time taken
-
-      setData({
-        ...result.data,
-        searchKeyword: keyword,
-        page: page,
-      });
-      setIsOffline(result.isOffline);
-    } catch (err) {
-      alert("No data available.");
-    }
+    setData({
+      ...result,
+      articles: p === 1
+        ? result.articles
+        : [...data.articles, ...result.articles]
+    });
 
     setLoading(false);
   };
 
+  const loadMore = () => {
+
+    if (page >= data.totalPages) return;
+
+    const nextPage = page + 1;
+
+    searchNews(keyword, nextPage, pageSize);
+  };
+
   return (
-    <div>
-      <SearchForm onSearch={handleSearch} />
+    <>
+      <SearchForm onSearch={searchNews} />
 
       <NewsList
         data={data}
         loading={loading}
-        isOffline={isOffline}
-        timeTakenMs={timeTakenMs} // ⬅ pass it to NewsList
-        onPageChange={handleSearch}
+        onLoadMore={loadMore}
       />
-    </div>
+    </>
   );
 }

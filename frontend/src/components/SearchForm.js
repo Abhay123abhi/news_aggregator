@@ -1,60 +1,64 @@
 import React from "react";
 
 export default function SearchForm({ onSearch }) {
+
   const [q, setQ] = React.useState("latest-news");
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10); // ✅ added
+  const [pageSize, setPageSize] = React.useState(10);
+
+  React.useEffect(() => {
+    onSearch(q, 1, pageSize);
+  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSearch(q, page, pageSize); // ✅ just added pageSize
+    onSearch(q, 1, pageSize);
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
+    <div
       style={{
         display: "flex",
-        gap: 10,
         justifyContent: "center",
-        marginTop: 20,
-        flexWrap: "wrap",
+        marginTop: 25,
+        padding: "0 20px"
       }}
     >
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Keyword"
-        style={inputStyle}
-      />
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+          background: "rgba(255,255,255,0.15)",
+          backdropFilter: "blur(10px)",
+          padding: "14px 18px",
+          borderRadius: 14,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+        }}
+      >
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="🔎 Search news keyword..."
+          style={inputStyle}
+        />
 
-      <input
-        type="number"
-        value={page}
-        min={1}
-        step={1}              // incremental
-        onChange={(e) => setPage(Number(e.target.value))}
-        style={{ ...inputStyle, width: 100 }}
-        placeholder="Page"
-      />
+        <input
+          type="number"
+          value={pageSize}
+          min={1}
+          step={1}
+          onChange={(e) => setPageSize(Number(e.target.value))}
+          style={{ ...inputStyle, width: 110 }}
+          placeholder="Page Size"
+        />
 
-
-      {/* ✅ Page Size Added */}
-      {/* Page Size */}
-      <input
-        type="number"
-        value={pageSize}
-        min={1}
-        step={1}              // incremental
-        onChange={(e) => setPageSize(Number(e.target.value))}
-        style={{ ...inputStyle, width: 100 }}
-        placeholder="Page Size"
-      />
-
-      <button style={buttonStyle}>
-        Search
-      </button>
-    </form>
+        <button style={buttonStyle}>
+          🔍 Search
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -62,8 +66,8 @@ const inputStyle = {
   border: "1px solid #ccc",
   borderRadius: 6,
   padding: "6px 10px",
-  minWidth: 120,
-  fontSize: 14,
+  minWidth: 150,
+  fontSize: 14
 };
 
 const buttonStyle = {
@@ -72,5 +76,5 @@ const buttonStyle = {
   border: "none",
   borderRadius: 6,
   padding: "6px 14px",
-  cursor: "pointer",
+  cursor: "pointer"
 };
