@@ -5,10 +5,6 @@ export default function SearchForm({ onSearch }) {
   const [q, setQ] = React.useState("latest-news");
   const [pageSize, setPageSize] = React.useState(10);
 
-  React.useEffect(() => {
-    onSearch(q, 1, pageSize);
-  }, []);
-
   function handleSubmit(e) {
     e.preventDefault();
     onSearch(q, 1, pageSize);

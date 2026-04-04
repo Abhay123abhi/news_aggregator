@@ -6,7 +6,7 @@ export const fetchNewsWithCache = async (keyword, page, pageSize) => {
 
     try {
     const response = await fetch(
-      `/api/news?q=${keyword}&page=${page}&pageSize=${pageSize}&offline=false`
+     `/api/news?keyword=${keyword}&page=${page}&pageSize=${pageSize}&offline=false`
     );
 
     if (!response.ok) {

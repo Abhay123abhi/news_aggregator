@@ -16,6 +16,9 @@ export default function App() {
   const searchNews = async (q, p, ps) => {
 
     setLoading(true);
+    if (p === 1) {
+      setData({ articles: [], totalPages: 1 });
+    }
 
     try {
       const result = await newsApi.search(q, p, ps, false);
@@ -27,8 +30,8 @@ export default function App() {
       setData(prev => ({
         ...result,
         articles: p === 1
-          ? result.articles
-          : [...prev.articles, ...result.articles]
+          ? result.articles || []
+          : [...prev.articles, ...(result.articles || [])]
       }));
 
     } catch (err) {
@@ -70,7 +73,9 @@ export default function App() {
 
         console.log("Received latest news update");
 
-        setData(latestNews);  // replace data
+        if (keyword === "latest-news") {
+          setData(latestNews);
+        }
 
       });
 
@@ -82,7 +87,7 @@ export default function App() {
       client.deactivate();
     };
 
-  }, []);
+  }, [keyword]);
 
   return (
     <>

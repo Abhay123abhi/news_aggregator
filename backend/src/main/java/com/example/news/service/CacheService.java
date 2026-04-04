@@ -9,15 +9,14 @@ import java.util.*;
 
 @Service
 public class CacheService {
-    @Cacheable(value = "offlineCache", key = "#keyword")
-    public List<NewsArticle> load(String keyword) {
-        // If cache miss → AggregationService will fetch from API
-        System.out.println("Chache Miss");
-        return List.of();
+    @Cacheable(value = "offlineCache", key = "#keyword + '_' + #page")
+    public List<NewsArticle> load(String keyword, int page) {
+        System.out.println("Cache Miss");
+        return null;
     }
 
-    @CachePut(value = "offlineCache", key = "#keyword")
-    public List<NewsArticle> save(String keyword, List<NewsArticle> articles) {
+    @CachePut(value = "offlineCache", key = "#keyword + '_' + #page")
+    public List<NewsArticle> save(String keyword, int page, List<NewsArticle> articles) {
         return articles;
     }
 }

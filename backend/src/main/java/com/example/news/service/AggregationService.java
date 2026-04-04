@@ -53,8 +53,13 @@ public class AggregationService {
         boolean usedOffline = false;
 
         if (offline) {
-            allArticles = cacheService.load(searchQuery);
-            usedOffline = true;
+            List<NewsArticle> cached = cacheService.load(searchQuery, currentPage);
+
+            if (cached != null) {
+                allArticles = cached;
+                usedOffline = true;
+            }
+
             log.info("Offline mode requested; loaded {} cached articles", allArticles.size());
         } else {
 
@@ -78,13 +83,18 @@ public class AggregationService {
                     log.warn("Provider failed: {}", ex.getMessage());
                 }
             }
+            if (!allArticles.isEmpty()) {
+                cacheService.save(searchQuery, currentPage, allArticles);
+            }
 
-            if (allArticles.isEmpty()) {
-                log.warn("No online results found. Using offline cache");
-                allArticles = cacheService.load(searchQuery);
+            List<NewsArticle> cached = cacheService.load(searchQuery, currentPage);
+
+            if (allArticles.isEmpty() && cached != null && !cached.isEmpty()) {
+
+                log.warn("Using cached results for keyword {}", searchQuery);
+
+                allArticles = cached;
                 usedOffline = true;
-            } else {
-                cacheService.save(searchQuery, allArticles);
             }
         }
 
