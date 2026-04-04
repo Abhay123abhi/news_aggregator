@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKER_USERNAME = 'abhayjais'
-        DOCKER_PASSWORD = credentials('dockerhub-token')  // stored in Jenkins credentials
         BACKEND_IMAGE = "${DOCKER_USERNAME}/news-backend"
         FRONTEND_IMAGE = "${DOCKER_USERNAME}/news-frontend"
         TAG = "${BUILD_NUMBER}"
@@ -12,23 +11,32 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
 
         stage('Build Backend') {
-            steps { dir('backend') { sh './gradlew build' } }
+            steps {
+                dir('backend') { sh './gradlew build' }
+            }
         }
 
         stage('Docker Build Backend') {
-            steps { sh "docker build -t ${BACKEND_IMAGE}:${TAG} ./backend" }
+            steps {
+                sh "docker build -t ${BACKEND_IMAGE}:${TAG} ./backend"
+            }
         }
 
         stage('Docker Build Frontend') {
-            steps { sh "docker build -t ${FRONTEND_IMAGE}:${TAG} ./frontend" }
+            steps {
+                sh "docker build -t ${FRONTEND_IMAGE}:${TAG} ./frontend"
+            }
         }
 
         stage('Push Images') {
             steps {
+                // Use credentials here instead of environment block
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
                                                  usernameVariable: 'DOCKER_USERNAME',
                                                  passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -51,7 +59,9 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps { sh 'kubectl apply -f k8s/' }
+            steps {
+                sh 'kubectl apply -f k8s/'
+            }
         }
 
         stage('Verify Deployment') {
@@ -63,7 +73,11 @@ pipeline {
     }
 
     post {
-        success { echo "✅ Full stack deployed successfully 🚀" }
-        failure { echo "❌ Pipeline failed. Check logs." }
+        success {
+            echo "✅ Full stack deployed successfully 🚀"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs."
+        }
     }
 }
