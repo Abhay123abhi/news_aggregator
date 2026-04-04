@@ -2,8 +2,18 @@ pipeline {
     agent any
 
     environment {
-        BACKEND_IMAGE = "news-backend"
-        FRONTEND_IMAGE = "news-frontend"
+        // Jenkins credentials ID (stored securely in Jenkins)
+        DOCKER_CREDENTIALS = 'dockerhub-creds'
+
+        // Docker username (you can hardcode this or also store in Jenkins credentials)
+        DOCKER_USERNAME = 'yourusername'
+
+        // Image names
+        BACKEND_IMAGE = "${DOCKER_USERNAME}/news-backend"
+        FRONTEND_IMAGE = "${DOCKER_USERNAME}/news-frontend"
+
+        // Version tag for images
+        TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -25,28 +35,41 @@ pipeline {
 
         stage('Docker Build Backend') {
             steps {
-                sh 'docker build -t $BACKEND_IMAGE ./backend'
+                script {
+                    backendImage = docker.build("${BACKEND_IMAGE}:${TAG}", "./backend")
+                }
             }
         }
 
         // ---------------- FRONTEND ----------------
-        stage('Build Frontend') {
+        stage('Docker Build Frontend') {
             steps {
-                sh 'docker build -t news-frontend ./frontend'
+                script {
+                    frontendImage = docker.build("${FRONTEND_IMAGE}:${TAG}", "./frontend")
+                }
             }
         }
 
-        stage('Docker Build Frontend') {
+        // ---------------- PUSH TO DOCKER HUB ----------------
+        stage('Push Images') {
             steps {
-                sh 'docker build -t $FRONTEND_IMAGE ./frontend'
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS) {
+                        backendImage.push("${TAG}")
+                        backendImage.push("latest")
+
+                        frontendImage.push("${TAG}")
+                        frontendImage.push("latest")
+                    }
+                }
             }
         }
 
         // ---------------- MINIKUBE ----------------
         stage('Load Images to Minikube') {
             steps {
-                sh 'minikube image load $BACKEND_IMAGE'
-                sh 'minikube image load $FRONTEND_IMAGE'
+                sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
+                sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
             }
         }
 
