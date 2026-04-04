@@ -32,10 +32,7 @@ pipeline {
         // ---------------- FRONTEND ----------------
         stage('Build Frontend') {
             steps {
-                dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
+                sh 'docker build -t news-frontend ./frontend'
             }
         }
 
