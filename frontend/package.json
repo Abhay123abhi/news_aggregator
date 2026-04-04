@@ -2,7 +2,6 @@
   "name": "news-aggregator-frontend",
   "version": "1.0.0",
   "private": true,
-  "proxy": "http://localhost:8080",
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.13.1",

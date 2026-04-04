@@ -1,3 +1,5 @@
+const BASE_URL = process.env.REACT_APP_API_URL;
+
 export const getCacheKey = (keyword, page, pageSize) =>
   `news_${keyword}_${page}_${pageSize}`;
 
@@ -6,7 +8,7 @@ export const fetchNewsWithCache = async (keyword, page, pageSize) => {
 
     try {
     const response = await fetch(
-     `/api/news?keyword=${keyword}&page=${page}&pageSize=${pageSize}&offline=false`
+     `${BASE_URL}/api/news?keyword=${keyword}&page=${page}&pageSize=${pageSize}&offline=false`
     );
 
     if (!response.ok) {

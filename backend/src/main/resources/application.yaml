@@ -8,16 +8,16 @@ spring:
   cache:
     type: redis
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST}
+    port: ${REDIS_HOST}
 
 guardian:
   api:
-    key: db3dbf79-161d-44cc-b079-2184c0c061f7
+    key: ${GUARDIAN_API_KEY}
 
 nyt:
   api:
-    key: PKoAKCMeCZ66JJEFqJ10Fdyom8KnLAn5
+    key: ${NYT_API_KEY}
 
 news:
   guardian:

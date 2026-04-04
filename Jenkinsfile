@@ -2,25 +2,34 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'news-aggregator:local'
+        BACKEND_IMAGE = "news-backend"
+        FRONTEND_IMAGE = "news-frontend"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Abhay123abhi/news_aggregator.git'
+                checkout scm
             }
         }
 
-        stage('Build Backend') {
+        // ---------------- BACKEND ----------------
+        stage('Build Backend (Gradle)') {
             steps {
                 dir('backend') {
-                    sh 'mvn clean package -DskipTests'
+                    sh './gradlew build'
                 }
             }
         }
 
+        stage('Docker Build Backend') {
+            steps {
+                sh 'docker build -t $BACKEND_IMAGE ./backend'
+            }
+        }
+
+        // ---------------- FRONTEND ----------------
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
@@ -30,19 +39,42 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build Frontend') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME} .'
+                sh 'docker build -t $FRONTEND_IMAGE ./frontend'
+            }
+        }
+
+        // ---------------- MINIKUBE ----------------
+        stage('Load Images to Minikube') {
+            steps {
+                sh 'minikube image load $BACKEND_IMAGE'
+                sh 'minikube image load $FRONTEND_IMAGE'
+            }
+        }
+
+        // ---------------- DEPLOY ----------------
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f k8s/'
+            }
+        }
+
+        // ---------------- VERIFY ----------------
+        stage('Verify Deployment') {
+            steps {
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
             }
         }
     }
 
     post {
         success {
-            echo "✅ Application successfully deployed on Docker"
+            echo "✅ Full stack deployed successfully 🚀"
         }
         failure {
-            echo "❌ Build failed! Check logs."
+            echo "❌ Pipeline failed. Check logs."
         }
     }
 }

@@ -1,7 +1,8 @@
 // src/api/newsApi.js
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8080/api/news';
+const BASE_URL = process.env.REACT_APP_API_URL;
+const API_BASE = `${BASE_URL}/api/news`;
 
 const newsApi = {
   async search(keyword, page, pageSize, offline) {
