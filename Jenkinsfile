@@ -2,70 +2,43 @@ pipeline {
     agent any
 
     environment {
-        // Jenkins credentials ID (stored securely in Jenkins)
-        DOCKER_CREDENTIALS = 'dockerhub-creds'
-
-        // Docker username (you can hardcode this or also store in Jenkins credentials)
-        DOCKER_USERNAME = 'yourusername'
-
-        // Image names
+        DOCKER_USERNAME = 'abhayjais'
+        DOCKER_PASSWORD = credentials('dockerhub-token')  // stored in Jenkins credentials
         BACKEND_IMAGE = "${DOCKER_USERNAME}/news-backend"
         FRONTEND_IMAGE = "${DOCKER_USERNAME}/news-frontend"
-
-        // Version tag for images
         TAG = "${BUILD_NUMBER}"
     }
 
     stages {
 
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
-        // ---------------- BACKEND ----------------
-        stage('Build Backend (Gradle)') {
-            steps {
-                dir('backend') {
-                    sh './gradlew build'
-                }
-            }
+        stage('Build Backend') {
+            steps { dir('backend') { sh './gradlew build' } }
         }
 
         stage('Docker Build Backend') {
-            steps {
-                script {
-                    backendImage = docker.build("${BACKEND_IMAGE}:${TAG}", "./backend")
-                }
-            }
+            steps { sh "docker build -t ${BACKEND_IMAGE}:${TAG} ./backend" }
         }
 
-        // ---------------- FRONTEND ----------------
         stage('Docker Build Frontend') {
-            steps {
-                script {
-                    frontendImage = docker.build("${FRONTEND_IMAGE}:${TAG}", "./frontend")
-                }
-            }
+            steps { sh "docker build -t ${FRONTEND_IMAGE}:${TAG} ./frontend" }
         }
 
-        // ---------------- PUSH TO DOCKER HUB ----------------
         stage('Push Images') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS) {
-                        backendImage.push("${TAG}")
-                        backendImage.push("latest")
-
-                        frontendImage.push("${TAG}")
-                        frontendImage.push("latest")
-                    }
-                }
+                sh """
+                echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                docker push ${BACKEND_IMAGE}:${TAG}
+                docker push ${BACKEND_IMAGE}:latest
+                docker push ${FRONTEND_IMAGE}:${TAG}
+                docker push ${FRONTEND_IMAGE}:latest
+                """
             }
         }
 
-        // ---------------- MINIKUBE ----------------
         stage('Load Images to Minikube') {
             steps {
                 sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
@@ -73,14 +46,10 @@ pipeline {
             }
         }
 
-        // ---------------- DEPLOY ----------------
         stage('Deploy to Kubernetes') {
-            steps {
-                sh 'kubectl apply -f k8s/'
-            }
+            steps { sh 'kubectl apply -f k8s/' }
         }
 
-        // ---------------- VERIFY ----------------
         stage('Verify Deployment') {
             steps {
                 sh 'kubectl get pods'
@@ -90,11 +59,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo "✅ Full stack deployed successfully 🚀"
-        }
-        failure {
-            echo "❌ Pipeline failed. Check logs."
-        }
+        success { echo "✅ Full stack deployed successfully 🚀" }
+        failure { echo "❌ Pipeline failed. Check logs." }
     }
 }
