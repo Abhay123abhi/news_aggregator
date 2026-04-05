@@ -23,18 +23,16 @@ pipeline {
         }
 
         stage('Build Frontend') {
-            agent {
-                docker {
-                    image 'node:18'
+                    steps {
+                        sh """
+                        docker run --rm \
+                          -v \$PWD/frontend:/app \
+                          -w /app \
+                          node:18 \
+                          sh -c "npm ci && npm run build"
+                        """
+                    }
                 }
-            }
-            steps {
-                dir('frontend') {
-                    sh 'npm ci'
-                    sh 'npm run build'
-                }
-            }
-        }
 
         stage('Docker Build') {
                     steps {
