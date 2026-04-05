@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (faster & deterministic)
-RUN npm ci
+RUN npm install
 
 # Copy rest of code
 COPY . .
