@@ -23,16 +23,18 @@ pipeline {
         }
 
         stage('Build Frontend') {
-                    steps {
-                        sh """
-                        docker run --rm \
-                          -v \$PWD/frontend:/app \
-                          -w /app \
-                          node:18 \
-                          sh -c "npm ci && npm run build"
-                        """
-                    }
+            steps {
+                dir('frontend') {
+                    sh """
+                    docker run --rm \
+                      -v \$(pwd):/app \
+                      -w /app \
+                      node:18 \
+                      sh -c "npm ci && npm run build"
+                    """
                 }
+            }
+        }
 
         stage('Docker Build') {
                     steps {
@@ -49,7 +51,7 @@ pipeline {
                                                  usernameVariable: 'DOCKER_USERNAME',
                                                  passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
-                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                     echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                      docker push ${BACKEND_IMAGE}:${TAG}
                      docker push ${FRONTEND_IMAGE}:${TAG}
                     """
@@ -57,20 +59,11 @@ pipeline {
             }
         }
 
-        stage('Load Images to Minikube') {
-            steps {
-                sh """
-                minikube image load ${BACKEND_IMAGE}:${TAG}
-                minikube image load ${FRONTEND_IMAGE}:${TAG}
-                """
-            }
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
                 echo "Replacing TAG in YAML..."
-                sed -i 's#\\${TAG}#${TAG}#g' k8s/*.yaml
+                sed -i "s|\${TAG}|${TAG}|g" k8s/*.yaml
 
                 echo "Deploying to Kubernetes..."
                 kubectl apply -f k8s/
