@@ -25,7 +25,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
+                    sh 'npm ci'
                     sh 'npm run build'
                 }
             }
@@ -56,15 +56,20 @@ pipeline {
 
         stage('Load Images to Minikube') {
             steps {
-                sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
-                sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
+                sh """
+                minikube image load ${BACKEND_IMAGE}:${TAG}
+                minikube image load ${FRONTEND_IMAGE}:${TAG}
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
-                sed -i 's#\${TAG}#${TAG}#g' k8s/*.yaml
+                echo "Replacing TAG in YAML..."
+                sed -i 's#\\${TAG}#${TAG}#g' k8s/*.yaml
+
+                echo "Deploying to Kubernetes..."
                 kubectl apply -f k8s/
                 """
             }

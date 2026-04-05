@@ -1,15 +1,11 @@
-
-target/
-*.war
+build/
+.gradle/
+.git
+.gitignore
+Dockerfile
+*.log
 *.class
-
-# IDE
+target/
 .idea/
 .vscode/
-*.iml
-
-
-# Environment
-application.properties
-application.yml
-.env
+.env*
