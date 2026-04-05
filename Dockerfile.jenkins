@@ -1,28 +1,30 @@
-# jenkins-dockerfile/Dockerfile
+# Dockerfile.jenkins
 FROM jenkins/jenkins:lts
 
 USER root
 
-# Install essential tools
+# Install basic tools
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    sudo \
     unzip \
     openjdk-17-jdk \
     build-essential \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
+    gnupg2 \
+    lsb-release
 
-# Install Node.js and npm
+# Install Node.js 18.x
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs npm \
-    && node -v \
-    && npm -v
+    && apt-get install -y nodejs
 
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
     && chmod +x kubectl \
     && mv kubectl /usr/local/bin/
 
-# Switch back to Jenkins user
+# Install Docker CLI (if needed)
+RUN curl -fsSL https://get.docker.com | sh
+
+# Switch back to jenkins user
 USER jenkins
