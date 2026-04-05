@@ -23,6 +23,11 @@ pipeline {
         }
 
         stage('Build Frontend') {
+            agent {
+                docker {
+                    image 'node:18'
+                }
+            }
             steps {
                 dir('frontend') {
                     sh 'npm ci'
