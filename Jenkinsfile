@@ -31,17 +31,14 @@ pipeline {
             }
         }
 
-        stage('Docker Build Backend') {
-            steps {
-                sh "docker build -t ${BACKEND_IMAGE}:${TAG} ./backend"
-            }
-        }
-
-        stage('Docker Build Frontend') {
-            steps {
-                sh "docker build -t ${FRONTEND_IMAGE}:${TAG} ./frontend"
-            }
-        }
+        stage('Docker Build') {
+                    steps {
+                        sh """
+                        docker build -t ${BACKEND_IMAGE}:${TAG} -t ${BACKEND_IMAGE}:latest ./backend
+                        docker build -t ${FRONTEND_IMAGE}:${TAG} -t ${FRONTEND_IMAGE}:latest ./frontend
+                        """
+                    }
+                }
 
         stage('Push Images to Docker Hub') {
             steps {
@@ -50,21 +47,19 @@ pipeline {
                                                  passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
                     echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                    docker push ${BACKEND_IMAGE}:${TAG}
-                    docker push ${BACKEND_IMAGE}:latest
-                    docker push ${FRONTEND_IMAGE}:${TAG}
-                    docker push ${FRONTEND_IMAGE}:latest
+                     docker push ${BACKEND_IMAGE}:${TAG}
+                     docker push ${FRONTEND_IMAGE}:${TAG}
                     """
                 }
             }
         }
 
-        stage('Load Images to Minikube') {
-            steps {
-                sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
-                sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
-            }
-        }
+//         stage('Load Images to Minikube') {
+//             steps {
+//                 sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
+//                 sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
+//             }
+//         }
 
         stage('Deploy to Kubernetes') {
             steps {
