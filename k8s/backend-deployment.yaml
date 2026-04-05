@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
+  name: news-backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: backend
+      app: news-backend
   template:
     metadata:
       labels:
-        app: backend
+        app: news-backend
     spec:
       containers:
-        - name: backend
+        - name: news-backend
           image: abhayjais/news-backend:${TAG}
           imagePullPolicy: Always
           ports:

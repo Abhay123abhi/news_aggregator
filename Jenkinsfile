@@ -22,6 +22,10 @@ pipeline {
             }
         }
 
+        stage('Build Frontend') {
+                    steps { dir('frontend') { sh 'npm install && npm run build' } }
+                }
+
         stage('Docker Build Backend') {
             steps {
                 sh "docker build -t ${BACKEND_IMAGE}:${TAG} ./backend"
@@ -34,7 +38,7 @@ pipeline {
             }
         }
 
-        stage('Push Images') {
+        stage('Push Images to Docker Hub') {
             steps {
                 // Use credentials here instead of environment block
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
