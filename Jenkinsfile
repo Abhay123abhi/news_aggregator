@@ -23,16 +23,13 @@ pipeline {
         }
 
         stage('Build Frontend') {
-                    steps {
-                        dir('frontend') {
-                            // Use Node Docker image to build frontend
-                            sh """
-                            docker run --rm -v \$(pwd):/app -w /app node:18 npm install
-                            docker run --rm -v \$(pwd):/app -w /app node:18 npm run build
-                            """
-                        }
-                    }
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
                 }
+            }
+        }
 
         stage('Docker Build Backend') {
             steps {
