@@ -54,16 +54,19 @@ pipeline {
             }
         }
 
-//         stage('Load Images to Minikube') {
-//             steps {
-//                 sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
-//                 sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
-//             }
-//         }
+        stage('Load Images to Minikube') {
+            steps {
+                sh "minikube image load ${BACKEND_IMAGE}:${TAG}"
+                sh "minikube image load ${FRONTEND_IMAGE}:${TAG}"
+            }
+        }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                sh """
+                sed -i 's#\${TAG}#${TAG}#g' k8s/*.yaml
+                kubectl apply -f k8s/
+                """
             }
         }
 
