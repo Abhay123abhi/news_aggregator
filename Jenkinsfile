@@ -23,16 +23,16 @@ pipeline {
         }
 
         stage('Build Frontend') {
-            agent {
-                docker { image 'node:18' }
-            }
-            steps {
-                dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                    steps {
+                        dir('frontend') {
+                            // Use Node Docker image to build frontend
+                            sh """
+                            docker run --rm -v \$(pwd):/app -w /app node:18 npm install
+                            docker run --rm -v \$(pwd):/app -w /app node:18 npm run build
+                            """
+                        }
+                    }
                 }
-            }
-        }
 
         stage('Docker Build Backend') {
             steps {
@@ -48,7 +48,6 @@ pipeline {
 
         stage('Push Images to Docker Hub') {
             steps {
-                // Use credentials here instead of environment block
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
                                                  usernameVariable: 'DOCKER_USERNAME',
                                                  passwordVariable: 'DOCKER_PASSWORD')]) {
