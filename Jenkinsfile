@@ -56,24 +56,29 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                // Use kubeconfig stored in Jenkins credentials
-                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
-                    sh """
-                    echo "Replacing TAG in YAML..."
-                    sed -i "s|\\\${TAG}|${TAG}|g" k8s/*.yaml
+                    steps {
+                        withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
+                            sh """
+                            echo "Applying Kubernetes manifests..."
+                            kubectl apply -f k8s/
 
-                    echo "Deploying to Kubernetes..."
-                    kubectl apply -f k8s/
-                    """
+                            echo "Updating deployments with new images..."
+                            kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${TAG} --record
+                            kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${TAG} --record
+
+                            echo "Waiting for rollout to finish..."
+                            kubectl rollout status deployment/backend
+                            kubectl rollout status deployment/frontend
+                            """
+                        }
+                    }
                 }
-            }
-        }
 
         stage('Verify Deployment') {
             steps {
                 sh 'kubectl get pods'
                 sh 'kubectl get svc'
+                sh 'kubectl get deployment'
             }
         }
     }
