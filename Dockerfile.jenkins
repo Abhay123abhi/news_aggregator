@@ -1,34 +1,15 @@
-# Dockerfile.jenkins
-FROM jenkins/jenkins:lts
+FROM jenkins/jenkins:lts-jdk17
 
 USER root
 
-# Install tools: curl, git, sudo, unzip, build-essential
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    sudo \
-    unzip \
-    build-essential \
-    gnupg2 \
-    lsb-release \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js 18
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+# Install Node.js, Docker CLI, kubectl, unzip, git
+RUN apt-get update && \
+    apt-get install -y curl git sudo unzip build-essential gnupg2 lsb-release && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    chmod +x kubectl && mv kubectl /usr/local/bin/ && \
+    curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-24.0.2.tgz | tar -xzC /usr/local/bin --strip-components=1 docker/docker
 
-# Install OpenJDK 17 via SDKMAN
-RUN curl -s "https://get.sdkman.io" | bash && \
-    bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && sdk install java 17.0.8-tem && sdk install gradle"
-
-# Install kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-    chmod +x kubectl && mv kubectl /usr/local/bin/
-
-# Install Docker CLI (optional if you need docker inside Jenkins)
-RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-24.0.2.tgz | tar -xzC /usr/local/bin --strip-components=1 docker/docker
-
-# Switch back to Jenkins user
+# Switch back to jenkins user
 USER jenkins
