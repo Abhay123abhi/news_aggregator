@@ -57,13 +57,16 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                echo "Replacing TAG in YAML..."
-                sed -i "s|\${TAG}|${TAG}|g" k8s/*.yaml
+                // Use kubeconfig stored in Jenkins credentials
+                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
+                    sh """
+                    echo "Replacing TAG in YAML..."
+                    sed -i "s|\\\${TAG}|${TAG}|g" k8s/*.yaml
 
-                echo "Deploying to Kubernetes..."
-                kubectl apply -f k8s/
-                """
+                    echo "Deploying to Kubernetes..."
+                    kubectl apply -f k8s/
+                    """
+                }
             }
         }
 
