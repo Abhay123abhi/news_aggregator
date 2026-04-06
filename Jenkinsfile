@@ -74,11 +74,33 @@ pipeline {
                     }
                 }
 
-        stage('Verify Deployment') {
+        stage('Debug Kubernetes') {
             steps {
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
-                sh 'kubectl get deployment'
+                sh """
+                whoami
+                kubectl config view
+                kubectl get nodes
+                """
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh """
+                echo "Checking cluster..."
+                kubectl get nodes
+
+                echo "Applying Kubernetes manifests..."
+                kubectl apply -f k8s/
+
+                echo "Updating deployments with new images..."
+                kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${TAG} --record || true
+                kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${TAG} --record || true
+
+                echo "Waiting for rollout..."
+                kubectl rollout status deployment/backend
+                kubectl rollout status deployment/frontend
+                """
             }
         }
     }
