@@ -49,7 +49,10 @@ pipeline {
                     sh """
                      echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                      docker push ${BACKEND_IMAGE}:${TAG}
+                     docker push ${BACKEND_IMAGE}:latest
+
                      docker push ${FRONTEND_IMAGE}:${TAG}
+                     docker push ${FRONTEND_IMAGE}:latest
                     """
                 }
             }
@@ -63,44 +66,22 @@ pipeline {
                             kubectl apply -f k8s/
 
                             echo "Updating deployments with new images..."
-                            kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${TAG} --record
-                            kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${TAG} --record
+                            kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
+                            kubectl set image deployment/news-frontend news-frontend=${FRONTEND_IMAGE}:${TAG}
 
                             echo "Waiting for rollout to finish..."
-                            kubectl rollout status deployment/backend
-                            kubectl rollout status deployment/frontend
+                            kubectl rollout status deployment/news-backend
+                            kubectl rollout status deployment/news-frontend
                             """
                         }
                     }
                 }
 
-        stage('Debug Kubernetes') {
+        stage('Verify Deployment') {
             steps {
-                sh """
-                whoami
-                kubectl config view
-                kubectl get nodes
-                """
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                echo "Checking cluster..."
-                kubectl get nodes
-
-                echo "Applying Kubernetes manifests..."
-                kubectl apply -f k8s/
-
-                echo "Updating deployments with new images..."
-                kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${TAG} --record || true
-                kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${TAG} --record || true
-
-                echo "Waiting for rollout..."
-                kubectl rollout status deployment/backend
-                kubectl rollout status deployment/frontend
-                """
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
+                sh 'kubectl get deployment'
             }
         }
     }

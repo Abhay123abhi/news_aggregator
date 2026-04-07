@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: news-backend
-          image: abhayjais/news-backend:${TAG}
+          image: abhayjais/news-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
