@@ -18,28 +18,33 @@ pipeline {
         }
 
         stage('Build Backend') {
-                    agent {
-                        docker {
-                            image 'gradle:7.6-jdk17-alpine'
-                            args '-v $HOME/.gradle:/home/gradle/.gradle'
-                        }
-                    }
-                    steps {
-                        sh './gradlew clean build -x test'
-                    }
+            agent {
+                docker {
+                    image 'gradle:7.6-jdk17-alpine'
+                    args '-v $HOME/.gradle:/home/gradle/.gradle'
                 }
+            }
+            steps {
+                dir('backend') {
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean build'
+                }
+            }
+        }
 
         stage('Build Frontend') {
-                    agent {
-                        docker {
-                            image 'node:18-alpine'
-                        }
-                    }
-                    steps {
-                        sh 'npm install'
-                        sh 'npm run build'
-                    }
+            agent {
+                docker {
+                    image 'node:18-alpine'
                 }
+            }
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
 
 
         stage('Docker Build') {
