@@ -75,10 +75,11 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
                     agent {
-                                    docker {
-                                        image 'bitnami/kubectl:latest'
-                                    }
-                                }
+                        docker {
+                            image 'bitnami/kubectl:latest'
+                            args '--entrypoint="" -u root'
+                        }
+                    }
                     steps {
                         withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
                             sh """
