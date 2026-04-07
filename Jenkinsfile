@@ -18,19 +18,29 @@ pipeline {
         }
 
         stage('Build Backend') {
-            steps {
-                dir('backend') { sh './gradlew build' }
-            }
-        }
+                    agent {
+                        docker {
+                            image 'gradle:7.6-jdk17-alpine'
+                            args '-v $HOME/.gradle:/home/gradle/.gradle'
+                        }
+                    }
+                    steps {
+                        sh './gradlew clean build -x test'
+                    }
+                }
 
         stage('Build Frontend') {
-            steps {
-                dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                    agent {
+                        docker {
+                            image 'node:18-alpine'
+                        }
+                    }
+                    steps {
+                        sh 'npm install'
+                        sh 'npm run build'
+                    }
                 }
-            }
-        }
+
 
         stage('Docker Build') {
                     steps {
@@ -59,6 +69,11 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
+                    agent {
+                                    docker {
+                                        image 'bitnami/kubectl:latest'
+                                    }
+                                }
                     steps {
                         withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
                             sh """
@@ -78,6 +93,11 @@ pipeline {
                 }
 
         stage('Verify Deployment') {
+            agent {
+                            docker {
+                                image 'bitnami/kubectl:latest'
+                            }
+                        }
             steps {
                 sh 'kubectl get pods'
                 sh 'kubectl get svc'

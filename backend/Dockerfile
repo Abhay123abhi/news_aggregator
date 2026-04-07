@@ -1,5 +1,5 @@
 # -------- Build Stage --------
-FROM gradle:7.6-jdk17 AS builder
+FROM gradle:7.6-jdk17-alpine AS builder
 
 WORKDIR /app
 COPY . .
