@@ -85,6 +85,9 @@ pipeline {
                     sh """
                     export KUBECONFIG=$KUBECONFIG_FILE
 
+                    echo "Using kubeconfig:"
+                    cat $KUBECONFIG
+
                     echo "Checking cluster access..."
                     kubectl get nodes
 
@@ -107,6 +110,7 @@ pipeline {
                             agent {
                                 docker {
                                     image 'bitnami/kubectl:latest'
+                                    args '--network host --entrypoint="" -u root'
                                 }
                             }
                             steps {
