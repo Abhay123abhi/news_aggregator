@@ -77,16 +77,16 @@ pipeline {
             agent {
                 docker {
                     image 'bitnami/kubectl:latest'
-                    args '--entrypoint="" -u root'
+                    args '--network host --entrypoint="" -u root'
                 }
             }
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
-                    sh """
+                    sh '''
                     export KUBECONFIG=$KUBECONFIG_FILE
 
                     echo "Using kubeconfig:"
-                    cat $KUBECONFIG
+                    cat $KUBECONFIG_FILE
 
                     echo "Checking cluster access..."
                     kubectl get nodes
@@ -101,31 +101,31 @@ pipeline {
                     echo "Waiting for rollout..."
                     kubectl rollout status deployment/news-backend
                     kubectl rollout status deployment/news-frontend
-                    """
+                    '''
                 }
             }
         }
 
         stage('Verify Deployment') {
-                            agent {
-                                docker {
-                                    image 'bitnami/kubectl:latest'
-                                    args '--network host --entrypoint="" -u root'
-                                }
-                            }
-                            steps {
-                                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
-                                    sh """
-                                    export KUBECONFIG=$KUBECONFIG_FILE
-                                    kubectl get pods
-                                    kubectl get svc
-                                    kubectl get deployment
-                                    """
-                                }
-                            }
-                        }
+            agent {
+                docker {
+                    image 'bitnami/kubectl:latest'
+                    args '--network host --entrypoint="" -u root'
+                }
+            }
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG_FILE
+                    kubectl get pods
+                    kubectl get svc
+                    kubectl get deployment
+                    '''
+                }
+            }
+        }
 
-                    }
+    }
 
     post {
         success {
