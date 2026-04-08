@@ -104,22 +104,24 @@ pipeline {
         }
 
         stage('Verify Deployment') {
-            agent {
-                docker {
-                    image 'bitnami/kubectl:latest'
-                }
-            }
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
-                    sh """
-                    export KUBECONFIG=$KUBECONFIG_FILE
-                    kubectl get pods
-                    kubectl get svc
-                    kubectl get deployment
-                    """
-                }
-            }
-        }
+                            agent {
+                                docker {
+                                    image 'bitnami/kubectl:latest'
+                                }
+                            }
+                            steps {
+                                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
+                                    sh """
+                                    export KUBECONFIG=$KUBECONFIG_FILE
+                                    kubectl get pods
+                                    kubectl get svc
+                                    kubectl get deployment
+                                    """
+                                }
+                            }
+                        }
+
+                    }
 
     post {
         success {
