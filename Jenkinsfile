@@ -74,43 +74,52 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-                    agent {
-                        docker {
-                            image 'bitnami/kubectl:latest'
-                            args '--entrypoint="" -u root'
-                        }
-                    }
-                    steps {
-                        withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
-                            sh """
-                            echo "Applying Kubernetes manifests..."
-                            kubectl apply -f k8s/ --validate=false
-
-                            echo "Updating deployments with new images..."
-                            kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
-                            kubectl set image deployment/news-frontend news-frontend=${FRONTEND_IMAGE}:${TAG}
-
-                            echo "Waiting for rollout to finish..."
-                            kubectl rollout status deployment/news-backend
-                            kubectl rollout status deployment/news-frontend
-                            """
-                        }
-                    }
+            agent {
+                docker {
+                    image 'bitnami/kubectl:latest'
+                    args '--entrypoint="" -u root'
                 }
+            }
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
+                    sh """
+                    export KUBECONFIG=$KUBECONFIG_FILE
+
+                    echo "Checking cluster access..."
+                    kubectl get nodes
+
+                    echo "Applying Kubernetes manifests..."
+                    kubectl apply -f k8s/ --validate=false
+
+                    echo "Updating deployments..."
+                    kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
+                    kubectl set image deployment/news-frontend news-frontend=${FRONTEND_IMAGE}:${TAG}
+
+                    echo "Waiting for rollout..."
+                    kubectl rollout status deployment/news-backend
+                    kubectl rollout status deployment/news-frontend
+                    """
+                }
+            }
+        }
 
         stage('Verify Deployment') {
             agent {
-                            docker {
-                                image 'bitnami/kubectl:latest'
-                            }
-                        }
+                docker {
+                    image 'bitnami/kubectl:latest'
+                }
+            }
             steps {
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
-                sh 'kubectl get deployment'
+                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
+                    sh """
+                    export KUBECONFIG=$KUBECONFIG_FILE
+                    kubectl get pods
+                    kubectl get svc
+                    kubectl get deployment
+                    """
+                }
             }
         }
-    }
 
     post {
         success {
