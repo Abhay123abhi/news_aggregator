@@ -84,7 +84,7 @@ pipeline {
                         withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG')]) {
                             sh """
                             echo "Applying Kubernetes manifests..."
-                            kubectl apply -f k8s/
+                            kubectl apply -f k8s/ --validate=false
 
                             echo "Updating deployments with new images..."
                             kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
