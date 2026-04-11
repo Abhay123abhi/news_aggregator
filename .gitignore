@@ -16,6 +16,11 @@ dist/
 .env
 .env.local
 
+# Kubernetes secrets
+k8s/secret.yaml
+k8s/secrets/
+**/secret*.yaml
+
 # Docker & Jenkins volumes
 docker-data/
 jenkins/jenkins_home/
