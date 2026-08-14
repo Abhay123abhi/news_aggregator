@@ -2,7 +2,7 @@
 FROM gradle:7.6-jdk17-alpine AS builder
 
 WORKDIR /app
-COPY . .
+COPY backend/ .
 
 # Build Spring Boot executable JAR without tests
 # Use the container's Gradle CLI instead of the wrapper (alpine /bin/sh may be BusyBox)
