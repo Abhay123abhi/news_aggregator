@@ -13,6 +13,7 @@ import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
+    private static final Logger log = LoggerFactory.getLogger(RedisConfig.class);
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
