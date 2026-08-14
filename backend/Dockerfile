@@ -5,7 +5,8 @@ WORKDIR /app
 COPY . .
 
 # Build Spring Boot executable JAR without tests
-RUN ./gradlew clean bootJar -x test
+# Use the container's Gradle CLI instead of the wrapper (alpine /bin/sh may be BusyBox)
+RUN gradle clean bootJar -x test --no-daemon
 
 # -------- Runtime Stage --------
 FROM eclipse-temurin:17-jdk-alpine

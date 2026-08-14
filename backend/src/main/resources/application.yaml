@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   jackson:
@@ -9,7 +9,7 @@ spring:
     type: redis
   redis:
     host: ${REDIS_HOST}
-    port: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 
 guardian:
   api:
