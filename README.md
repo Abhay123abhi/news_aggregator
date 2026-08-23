@@ -5,7 +5,7 @@ Full-stack news search application that aggregates The Guardian and New York Tim
 ## Architecture
 
 - **Backend:** Java 21, Spring Boot, OpenFeign, Redis, Actuator and OpenAPI
-- **Frontend:** React served by NGINX; NGINX proxies API and WebSocket traffic to the backend
+- **Frontend:** React served by NGINX; NGINX proxies API traffic to the backend
 - **Deployment:** Docker images deployed to Kubernetes through Jenkins
 
 ## Local development
@@ -27,6 +27,19 @@ REACT_APP_API_URL=http://localhost:8080 npm start
 ```
 
 The API is available at `http://localhost:8080/api/news`. Swagger is disabled by default; set `SWAGGER_ENABLED=true` only in a trusted development environment.
+
+## Frontend structure
+
+```text
+frontend/src/
+├── App.js                 # application shell and page state
+├── App.css                # global theme and layout tokens
+└── features/news/
+    ├── api/               # backend client
+    └── components/        # search, result and UI states
+```
+
+The UI stores the selected light/dark theme locally, uses accessible labels and focus states, provides loading skeletons, retry and empty states, and remains responsive down to mobile widths.
 
 ## Kubernetes deployment
 
