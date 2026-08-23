@@ -1,41 +1,41 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_USERNAME = 'abhayjais'
-        BACKEND_IMAGE = "${DOCKER_USERNAME}/news-backend"
-        FRONTEND_IMAGE = "${DOCKER_USERNAME}/news-frontend"
-        TAG = "${BUILD_NUMBER}"
+    options {
+        timestamps()
+        disableConcurrentBuilds()
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                deleteDir()
                 checkout scm
             }
         }
 
-        stage('Build Backend') {
+        stage('Backend Tests') {
             agent {
                 docker {
                     image 'gradle:8.14.4-jdk21-alpine'
-                    args '-v $HOME/.gradle:/home/gradle/.gradle'
                 }
             }
             steps {
                 dir('backend') {
                     sh 'chmod +x gradlew'
-                    sh './gradlew clean build'
+                    sh './gradlew --no-daemon clean test bootJar'
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'backend/build/test-results/test/*.xml'
                 }
             }
         }
 
-        stage('Build Frontend') {
+        stage('Frontend Build') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'node:20-alpine'
                 }
             }
             steps {
@@ -45,91 +45,14 @@ pipeline {
                 }
             }
         }
-
-
-        stage('Docker Build') {
-                    steps {
-                        sh """
-                        docker build -t ${BACKEND_IMAGE}:${TAG} -t ${BACKEND_IMAGE}:latest ./backend
-                        docker build -t ${FRONTEND_IMAGE}:${TAG} -t ${FRONTEND_IMAGE}:latest ./frontend
-                        """
-                    }
-                }
-
-        stage('Push Images to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                 usernameVariable: 'DOCKER_USERNAME',
-                                                 passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh """
-                     echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                     docker push ${BACKEND_IMAGE}:${TAG}
-                     docker push ${BACKEND_IMAGE}:latest
-
-                     docker push ${FRONTEND_IMAGE}:${TAG}
-                     docker push ${FRONTEND_IMAGE}:latest
-                    """
-                }
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            agent {
-                docker {
-                    image 'bitnami/kubectl:latest'
-                    args '--network host --entrypoint="" -u root'
-                }
-            }
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
-
-                    echo "Checking cluster access..."
-                    kubectl get nodes
-
-                    echo "Applying Kubernetes manifests..."
-                    kubectl apply -f k8s/
-
-                    echo "Updating deployments..."
-                    kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
-                    kubectl set image deployment/news-frontend news-frontend=${FRONTEND_IMAGE}:${TAG}
-
-                    echo "Waiting for rollout..."
-                    kubectl rollout status deployment/news-backend --timeout=180s
-                    kubectl rollout status deployment/news-frontend --timeout=180s
-                    '''
-                }
-            }
-        }
-
-        stage('Verify Deployment') {
-            agent {
-                docker {
-                    image 'bitnami/kubectl:latest'
-                    args '--network host --entrypoint="" -u root'
-                }
-            }
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
-                    kubectl get pods
-                    kubectl get svc
-                    kubectl get deployment
-                    '''
-                }
-            }
-        }
-
     }
 
     post {
         success {
-            echo "✅ Full stack deployed successfully 🚀"
+            echo 'Backend tests and frontend build passed. Render deploys from the merged Git branch.'
         }
         failure {
-            echo "❌ Pipeline failed. Check logs."
+            echo 'Build failed. Review the Jenkins console and test reports.'
         }
     }
 }

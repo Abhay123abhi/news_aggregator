@@ -1,19 +1,17 @@
-// src/api/newsApi.js
-import axios from 'axios';
+import axios from "axios";
 
-const BASE_URL = process.env.REACT_APP_API_URL || "";
-const API_BASE = `${BASE_URL}/api/news`;
+const client = axios.create({
+  baseURL: "/api",
+  timeout: 10000,
+  headers: { Accept: "application/json" }
+});
 
 const newsApi = {
-  async search(keyword, page, pageSize, offline) {
-    const params = {
-      keyword,           
-      page,             
-      pageSize,         
-      offline            
-    };
-    const resp = await axios.get(API_BASE, { params });
-    return resp.data;
+  async search(keyword, page, pageSize, offline = false) {
+    const { data } = await client.get("/news", {
+      params: { keyword: keyword.trim(), page, pageSize, offline }
+    });
+    return data;
   }
 };
 

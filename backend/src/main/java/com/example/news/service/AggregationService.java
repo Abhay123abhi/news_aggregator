@@ -53,10 +53,12 @@ public class AggregationService {
         int size = (pageSize <= 0) ? DEFAULT_PAGE_SIZE : Math.min(pageSize, 25);
 
         List<NewsArticle> allArticles = new ArrayList<>();
+        int totalAvailableArticles = 0;
+        int availablePages = currentPage;
         boolean usedOffline = false;
 
         if (offline) {
-            List<NewsArticle> cached = cacheService.load(searchQuery, currentPage);
+            List<NewsArticle> cached = loadCachedArticles(searchQuery, currentPage, size);
 
             if (cached != null) {
                 allArticles = cached;
@@ -84,25 +86,20 @@ public class AggregationService {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
             for (CompletableFuture<NewsApiResult> future : futures) {
-                try {
-                    NewsApiResult result = future.join();
-                    allArticles.addAll(result.articles());
-                } catch (Exception ex) {
-                    log.warn("Provider failed: {}", ex.getMessage());
-                }
+                NewsApiResult result = future.join();
+                allArticles.addAll(result.articles());
+                totalAvailableArticles += result.totalResults();
+                availablePages = Math.max(availablePages, result.totalPages());
             }
             if (!allArticles.isEmpty()) {
-                cacheService.save(searchQuery, currentPage, allArticles);
-            }
-
-            List<NewsArticle> cached = cacheService.load(searchQuery, currentPage);
-
-            if (allArticles.isEmpty() && cached != null && !cached.isEmpty()) {
-
-                log.warn("Using cached results for keyword {}", searchQuery);
-
-                allArticles = cached;
-                usedOffline = true;
+                saveCachedArticles(searchQuery, currentPage, size, allArticles);
+            } else {
+                List<NewsArticle> cached = loadCachedArticles(searchQuery, currentPage, size);
+                if (cached != null && !cached.isEmpty()) {
+                    log.warn("Using cached results for keyword {}", searchQuery);
+                    allArticles = cached;
+                    usedOffline = true;
+                }
             }
         }
 
@@ -124,6 +121,10 @@ public class AggregationService {
                 .toList();
 
         long timeTaken = Duration.between(startTime, Instant.now()).toMillis();
+        int totalArticles = usedOffline ? uniqueArticles.size()
+                : Math.max(totalAvailableArticles, uniqueArticles.size());
+        int totalPages = usedOffline ? currentPage : availablePages;
+        Integer nextPage = !usedOffline && currentPage < totalPages ? currentPage + 1 : null;
 
         return new SearchResponse(
                 "News Aggregator",
@@ -131,10 +132,10 @@ public class AggregationService {
                 "Global",
                 currentPage,
                 size,
-                uniqueArticles.size(),
-                uniqueArticles.isEmpty() ? currentPage : currentPage + 1,
+                totalArticles,
+                totalPages,
                 currentPage > 1 ? currentPage - 1 : null,
-                currentPage + 1,
+                nextPage,
                 usedOffline,
                 timeTaken,
                 uniqueArticles
@@ -159,5 +160,22 @@ public class AggregationService {
 
     private NewsApiResult emptyResult() {
         return new NewsApiResult(0, 0, List.of());
+    }
+
+    private List<NewsArticle> loadCachedArticles(String keyword, int page, int pageSize) {
+        try {
+            return cacheService.load(keyword, page, pageSize);
+        } catch (RuntimeException ex) {
+            log.warn("Unable to read cached articles for keyword {}", keyword, ex);
+            return null;
+        }
+    }
+
+    private void saveCachedArticles(String keyword, int page, int pageSize, List<NewsArticle> articles) {
+        try {
+            cacheService.save(keyword, page, pageSize, articles);
+        } catch (RuntimeException ex) {
+            log.warn("Unable to cache articles for keyword {}", keyword, ex);
+        }
     }
 }
