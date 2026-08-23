@@ -9,14 +9,13 @@ import java.util.*;
 
 @Service
 public class CacheService {
-    @Cacheable(value = "offlineCache", key = "#keyword + '_' + #page")
-    public List<NewsArticle> load(String keyword, int page) {
-        System.out.println("Cache Miss");
+    @Cacheable(value = "offlineCache", key = "#keyword.toLowerCase() + '_' + #page + '_' + #pageSize", unless = "#result == null")
+    public List<NewsArticle> load(String keyword, int page, int pageSize) {
         return null;
     }
 
-    @CachePut(value = "offlineCache", key = "#keyword + '_' + #page")
-    public List<NewsArticle> save(String keyword, int page, List<NewsArticle> articles) {
+    @CachePut(value = "offlineCache", key = "#keyword.toLowerCase() + '_' + #page + '_' + #pageSize")
+    public List<NewsArticle> save(String keyword, int page, int pageSize, List<NewsArticle> articles) {
         return articles;
     }
 }

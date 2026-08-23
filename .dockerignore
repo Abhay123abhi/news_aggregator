@@ -1,5 +1,0 @@
-.git
-**/.gradle
-**/node_modules
-**/build
-.env*

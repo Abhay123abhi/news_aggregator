@@ -44,7 +44,8 @@ public class NytClient implements NewsProviderClient {
                     (Map<String, Object>) response.getOrDefault("meta", Collections.emptyMap());
 
             int totalResults = (int) meta.getOrDefault("hits", 0);
-            int totalPages = (int) Math.ceil(totalResults / (double) pageSize);
+            // The NYT Article Search API always returns ten documents per page.
+            int totalPages = (int) Math.ceil(totalResults / 10.0);
 
             List<Map<String, Object>> docs =
                     (List<Map<String, Object>>) response.getOrDefault("docs", Collections.emptyList());
