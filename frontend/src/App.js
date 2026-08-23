@@ -1,104 +1,72 @@
-import React, { useState, useEffect } from "react";
-import newsApi from "./api/newsApi";
-import SearchForm from "./components/SearchForm";
-import NewsList from "./components/NewsList";
-import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import newsApi from "./features/news/api/newsApi";
+import SearchForm from "./features/news/components/SearchForm";
+import NewsList from "./features/news/components/NewsList";
+import "./App.css";
+
+const DEFAULT_QUERY = "latest-news";
+const DEFAULT_PAGE_SIZE = 12;
+
+function getSavedTheme() {
+  const savedTheme = window.localStorage.getItem("news-theme");
+  if (savedTheme) return savedTheme;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 export default function App() {
+  const [theme, setTheme] = useState(getSavedTheme);
+  const [search, setSearch] = useState({ keyword: DEFAULT_QUERY, pageSize: DEFAULT_PAGE_SIZE });
+  const [data, setData] = useState({ articles: [], page: 1, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [data, setData] = useState({ articles: [], totalPages: 1 });
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("latest-news");
-  const [pageSize, setPageSize] = useState(10);
-  const [loading, setLoading] = useState(false);
-
-  const searchNews = async (q, p, ps) => {
-
+  const loadNews = useCallback(async (keyword, page, pageSize) => {
     setLoading(true);
-    if (p === 1) {
-      setData({ articles: [], totalPages: 1 });
-    }
-
+    setError("");
     try {
-      const result = await newsApi.search(q, p, ps, false);
-
-      setKeyword(q);
-      setPage(p);
-      setPageSize(ps);
-
-      setData(prev => ({
-        ...result,
-        articles: p === 1
-          ? result.articles || []
-          : [...prev.articles, ...(result.articles || [])]
-      }));
-
-    } catch (err) {
-      console.error("Error fetching news", err);
+      const response = await newsApi.search(keyword, page, pageSize, false);
+      setData(response);
+      setSearch({ keyword, pageSize });
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "We couldn't load the news right now. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
-
-  const loadMore = () => {
-
-    if (page >= data.totalPages) return;
-
-    const nextPage = page + 1;
-    searchNews(keyword, nextPage, pageSize);
-  };
-
-  // Initial load
-  useEffect(() => {
-    searchNews(keyword, 1, pageSize);
   }, []);
 
-  // WebSocket connection
+  useEffect(() => { loadNews(DEFAULT_QUERY, 1, DEFAULT_PAGE_SIZE); }, [loadNews]);
   useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("news-theme", theme);
+  }, [theme]);
 
-    const client = new Client({
-      webSocketFactory: () => new SockJS("/news-socket"),
-      reconnectDelay: 5000,
-      debug: (str) => console.log(str)
-    });
+  const resultSummary = useMemo(() => {
+    if (loading) return "Finding the latest stories…";
+    if (!data.articles?.length) return "No stories found";
+    return `${data.articles.length} stories for “${data.searchKeyword || search.keyword}”`;
+  }, [data, loading, search.keyword]);
 
-    client.onConnect = () => {
+  const handleSearch = (keyword, pageSize) => loadNews(keyword, 1, pageSize);
+  const handlePageChange = (page) => loadNews(search.keyword, page, search.pageSize);
 
-      console.log("WebSocket Connected");
-
-      client.subscribe("/topic/news", (message) => {
-
-        const latestNews = JSON.parse(message.body);
-
-        console.log("Received latest news update");
-
-        if (keyword === "latest-news") {
-          setData(latestNews);
-        }
-
-      });
-
-    };
-
-    client.activate();
-
-    return () => {
-      client.deactivate();
-    };
-
-  }, [keyword]);
-
-  return (
-    <>
-      <SearchForm onSearch={searchNews} />
-
-      <NewsList
-        data={data}
-        loading={loading}
-        isOffline={data.offline}
-        onLoadMore={loadMore}
-      />
-    </>
-  );
+  return <main className="app-shell">
+    <header className="hero">
+      <nav className="topbar" aria-label="Primary navigation">
+        <a className="brand" href="/" aria-label="Newsroom home"><span className="brand-mark" aria-hidden="true">N</span><span>Newsroom</span></a>
+        <button className="theme-toggle" type="button" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light" : "Dark"}</button>
+      </nav>
+      <div className="hero-content">
+        <p className="eyebrow">YOUR DAILY BRIEFING</p><h1>Follow the stories<br />that matter.</h1>
+        <p className="hero-copy">Search trusted reporting from The Guardian and The New York Times in one focused, distraction-free space.</p>
+        <SearchForm initialKeyword={search.keyword} initialPageSize={search.pageSize} onSearch={handleSearch} loading={loading} />
+      </div>
+    </header>
+    <section className="content" aria-live="polite">
+      <div className="results-header"><div><p className="section-label">LATEST RESULTS</p><h2>{resultSummary}</h2></div>{data.timeTakenMs != null && !loading && <span className="speed-badge">Updated in {(data.timeTakenMs / 1000).toFixed(1)}s</span>}</div>
+      {data.offline && <div className="offline-banner" role="status">You’re viewing cached results while providers are unavailable.</div>}
+      <NewsList articles={data.articles || []} loading={loading} error={error} onRetry={() => loadNews(search.keyword, data.page || 1, search.pageSize)} />
+      {!loading && !error && data.articles?.length > 0 && <nav className="pagination" aria-label="News result pages"><button type="button" onClick={() => handlePageChange(data.prevPage)} disabled={!data.prevPage}>← Previous</button><span>Page {data.page || 1}</span><button type="button" onClick={() => handlePageChange(data.nextPage)} disabled={!data.nextPage}>Next →</button></nav>}
+    </section>
+    <footer>Newsroom aggregates public reporting. Always read the original source for full context.</footer>
+  </main>;
 }
