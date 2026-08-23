@@ -1,127 +1,49 @@
-News Aggregator Microservice
+# News Aggregator
 
-A **production-ready, full-stack News Aggregator application** that fetches, normalizes, and displays the latest news from multiple public APIs — **The Guardian** and **The New York Times** — based on user search keywords.
+Full-stack news search application that aggregates The Guardian and New York Times APIs, caches successful searches in Redis, and serves a React user interface.
 
-The application demonstrates:
-- Aggregation and normalization from multiple APIs  
-- Duplicate elimination and unified pagination  
-- Offline caching (no DB, only JSON cache)  
-- SOLID, 12-Factor, and HATEOAS design principles  
-- CI/CD automation with Jenkins  
-- Containerization with Docker  
-- OpenAPI documentation via Swagger  
+## Architecture
 
----
+- **Backend:** Java 21, Spring Boot, OpenFeign, Redis, Actuator and OpenAPI
+- **Frontend:** React served by NGINX; NGINX proxies API and WebSocket traffic to the backend
+- **Deployment:** Docker images deployed to Kubernetes through Jenkins
 
-# Architecture Overview ( High Level Flow )
+## Local development
 
-1. **Frontend (React / HTML Client)**  
-   - Displays content cards with title, description, URL, and publication date.  
-   - Supports pagination and "Read More" links.  
-   - Supports prev and next page along with total pages and serach keyword.
+Prerequisites: Java 21, Node 20+, Redis, and API keys for both providers.
 
-2. **Backend (Spring Boot Service)**  
-   - Exposes a unified `/news/search?query={keyword}&page={page}` endpoint.  
-   - Internally aggregates results from:
-     - *New York Times API*
-     - *The Guardian API*
-   - Merges, normalizes, and removes duplicates based on URL and title similarity.
-   - Returns combined, paginated results to frontend.
+```bash
+export GUARDIAN_API_KEY=your_guardian_key
+export NYT_API_KEY=your_nyt_key
+cd backend && ./gradlew bootRun
+```
 
-3. **Cache Layer (Redis Offline Cache)**  
-   - Uses Spring Cache + Redis with @Cacheable and @CachePut.
-   - Cached per keyword using key format:
-      'offlineCache::sports'
-      'offlineCache::india'
-   - Redis TTL configured for 6 hours.
-   - user explicitly requests offline mode.
-   - No JSON files — cache fully in Redis
+In a second terminal:
 
-   ### Development Setup (Current)
-   - Redis runs locally using **WSL (Ubuntu)**.
-   - Spring Boot connects via:
-     ```
-     spring.data.redis.host=localhost
-     spring.data.redis.port=6379
-     ```
-   - Suitable for local testing and development.
+```bash
+cd frontend
+npm ci
+REACT_APP_API_URL=http://localhost:8080 npm start
+```
 
-   ### Production-Ready Approach (Scalable)
-   For large-scale / millions of users:
-   - Use **Redis Cluster** for horizontal scaling
-   - Or run Redis via **Docker container**
-   - Or use managed Redis services:
-      - AWS ElastiCache
-      - Azure Cache for Redis
-      - Redis Cloud
+The API is available at `http://localhost:8080/api/news`. Swagger is disabled by default; set `SWAGGER_ENABLED=true` only in a trusted development environment.
 
-4. **CI/CD Pipeline (Jenkins)**  
-   - Automatically clones the GitHub repository.  
-   - Builds the project using Maven.  
-   - Builds and pushes Docker images to a container registry.  
-   - Deploys the container locally.
+## Kubernetes deployment
 
-5. **Docker Container**  
-   - Runs the Spring Boot backend (port `8080`).  
-   - Can be executed on any machine with Docker installed.  
+Create API secrets outside source control, then apply the manifests:
 
----
+```bash
+kubectl create secret generic api-secrets \\
+  --from-literal=GUARDIAN_API_KEY=... \\
+  --from-literal=NYT_API_KEY=...
+kubectl apply -f k8s/
+```
 
-## Sequence / Architecture Diagram
+The Jenkins pipeline builds immutable, build-number-tagged images, deploys those exact tags, and waits for the rollout. Do not commit provider keys, kubeconfig files, or generated build directories.
 
-<img width="1183" height="538" alt="image" src="https://github.com/user-attachments/assets/0b8e7c28-5578-4064-aacc-1f9820240d8c" />
+## Operational notes
 
-## Design Patterns 
-   - Aggregator Pattern : Combines multiple API responses into a unified structure.
-   - Strategy Pattern : Each API client (NYT, Guardian) implements a common strategy interface for fetching news. 
-   - Decorator Pattern : Adds caching layer (CacheService) without modifying core aggregation logic. 
-   - Singleton Pattern : Used for managing the in-memory cache manager and thread pool (`ExecutorService`).
-
-## Key Features
-
-  - **Keyword-based search**  
-  - **Pagination support** (default: 10 results per page)
-  - **Parallel API calls** via `ExecutorService`
-  - **Duplicate elimination**
-  - **Offline mode with JSON caching**
-  - **API keys encrypted using application properties**
-  - **Swagger UI for API documentation**
-  - **Dockerized build and deploy**
-  - **Jenkins and Git for CI/CD**
-
-## Setup & Run Instructions
-
-   git clone https://github.com/Abhay123abhi/news-aggregator.git
-   cd news-aggregator
-
-   **Configure API Keys**
-   guardian.api.key=YOUR_GUARDIAN_KEY
-   nyt.api.key=YOUR_NYT_KEY
-
-   **Build and Run Locally**
-   mvn clean install
-   mvn spring-boot:run
-
-   Backend Service will be available at:
-   http://localhost:8080
-
-   Frontend Service will be available at:
-   http://localhost:3000
-
-   **Docker Instructions**
-   docker build -t news-aggregator:latest.
-   docker run -d -p 8080:8080 --name news-aggregator news-aggregator:latest
-
-## Swagger / OpenAPI Documentation
-   Once the application is running, you can explore and test APIs via Swagger UI.
-
-   **Open Swagger UI**
-   http://localhost:8080/swagger-ui/index.html
-
-## Jenkins Setup
-
-   **open Jenkins at at build and deploy to test locally**
-   http://localhost:8081/job/news-aggregator-pipeline/8/console
-   
-
-   <img width="1883" height="865" alt="image" src="https://github.com/user-attachments/assets/66db8156-5d27-49dc-88d2-209f4a4d6a3b" />
+- Each upstream provider is isolated and times out after five seconds. A failed provider does not fail the full search.
+- Redis cache entries expire after six hours; a cached response is used if all providers are unavailable.
+- The backend exposes `health` and `info`; Kubernetes uses Actuator readiness and liveness probes.
+- Set `CORS_ALLOWED_ORIGINS` explicitly for every deployed frontend origin.

@@ -1,5 +1,5 @@
 # -------- Build Stage --------
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (faster & deterministic)
-RUN npm install
+RUN npm ci
 
 # Copy rest of code
 COPY . .
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # -------- Production Stage --------
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:1.28-alpine
 
 # Copy build output only
 COPY --from=build /app/build /usr/share/nginx/html
@@ -24,6 +24,6 @@ COPY --from=build /app/build /usr/share/nginx/html
 # Custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

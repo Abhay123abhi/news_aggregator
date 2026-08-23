@@ -26,9 +26,10 @@ public class AggregationService {
     private final List<NewsProviderClient> providers;
     private final CacheService cacheService;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors()
-    );
+    private final ExecutorService providerExecutor;
+
+    @Value("${news.provider-timeout}")
+    private Duration providerTimeout;
 
     @Value("${news.guardian.enabled:true}")
     private boolean guardianEnabled;
@@ -36,9 +37,11 @@ public class AggregationService {
     @Value("${news.nyt.enabled:true}")
     private boolean nytEnabled;
 
-    public AggregationService(List<NewsProviderClient> providers, CacheService cacheService) {
+    public AggregationService(List<NewsProviderClient> providers, CacheService cacheService,
+                              ExecutorService providerExecutor) {
         this.providers = providers;
         this.cacheService = cacheService;
+        this.providerExecutor = providerExecutor;
     }
 
     public SearchResponse search(String keyword, int page, int pageSize, boolean offline) {
@@ -47,7 +50,7 @@ public class AggregationService {
 
         String searchQuery = (keyword == null || keyword.isBlank()) ? "latest" : keyword.trim();
         int currentPage = (page < 1) ? DEFAULT_PAGE : page;
-        int size = (pageSize <= 0) ? DEFAULT_PAGE_SIZE : pageSize;
+        int size = (pageSize <= 0) ? DEFAULT_PAGE_SIZE : Math.min(pageSize, 25);
 
         List<NewsArticle> allArticles = new ArrayList<>();
         boolean usedOffline = false;
@@ -70,7 +73,12 @@ public class AggregationService {
 
             List<CompletableFuture<NewsApiResult>> futures = activeProviders.stream()
                     .map(provider -> CompletableFuture.supplyAsync(
-                            () -> provider.search(searchQuery, currentPage, size), executor))
+                            () -> provider.search(searchQuery, currentPage, size), providerExecutor)
+                            .completeOnTimeout(emptyResult(), providerTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                            .exceptionally(ex -> {
+                                log.warn("Provider {} failed", provider.getProviderName(), ex);
+                                return emptyResult();
+                            }))
                     .toList();
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
@@ -98,7 +106,7 @@ public class AggregationService {
             }
         }
 
-        // Deduplicate by normalized URL
+        // Providers return a page each. Pagination metadata therefore reflects this aggregated page.
         List<NewsArticle> uniqueArticles = allArticles.stream()
                 .filter(a -> a.url() != null && !a.url().isBlank())
                 .collect(Collectors.toMap(
@@ -124,7 +132,7 @@ public class AggregationService {
                 currentPage,
                 size,
                 uniqueArticles.size(),
-                currentPage + 1,
+                uniqueArticles.isEmpty() ? currentPage : currentPage + 1,
                 currentPage > 1 ? currentPage - 1 : null,
                 currentPage + 1,
                 usedOffline,
@@ -147,5 +155,9 @@ public class AggregationService {
         if (queryIdx > 0) s = s.substring(0, queryIdx);
         if (s.endsWith("/")) s = s.substring(0, s.length() - 1);
         return s;
+    }
+
+    private NewsApiResult emptyResult() {
+        return new NewsApiResult(0, 0, List.of());
     }
 }

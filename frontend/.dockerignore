@@ -1,5 +1,5 @@
 node_modules
 build
+.git
 .env*
 npm-debug.log*
-yarn-error.log*

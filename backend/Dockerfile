@@ -1,23 +1,24 @@
 # -------- Build Stage --------
-FROM gradle:7.6-jdk17-alpine AS builder
+FROM gradle:8.14.4-jdk21-alpine AS builder
 
 WORKDIR /app
-COPY backend/ .
+COPY . .
 
-# Build Spring Boot executable JAR without tests
-# Use the container's Gradle CLI instead of the wrapper (alpine /bin/sh may be BusyBox)
-RUN gradle clean bootJar -x test --no-daemon
+RUN gradle --no-daemon bootJar
 
 # -------- Runtime Stage --------
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
 # Copy only the bootable JAR and rename to app.jar
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+RUN addgroup -S app && adduser -S app -G app
+USER app
+
 # Expose Spring Boot default port
 EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

@@ -3,6 +3,7 @@ node_modules/
 target/
 build/
 dist/
+**/.gradle/
 
 # IDE & System
 .idea/
@@ -27,4 +28,4 @@ jenkins/jenkins_home/
 
 # Misc
 *.tmp
-"jenkins_home/" 
+jenkins_home/

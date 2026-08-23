@@ -1,8 +1,5 @@
 build/
 .gradle/
-.git
-.gitignore
-Dockerfile
 *.log
 *.class
 target/

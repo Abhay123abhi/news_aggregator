@@ -96,6 +96,7 @@ export default function App() {
       <NewsList
         data={data}
         loading={loading}
+        isOffline={data.offline}
         onLoadMore={loadMore}
       />
     </>

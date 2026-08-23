@@ -20,7 +20,7 @@ pipeline {
         stage('Build Backend') {
             agent {
                 docker {
-                    image 'gradle:7.6-jdk17-alpine'
+                    image 'gradle:8.14.4-jdk21-alpine'
                     args '-v $HOME/.gradle:/home/gradle/.gradle'
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
             }
             steps {
                 dir('frontend') {
-                    sh 'npm install'
+                    sh 'npm ci'
                     sh 'npm run build'
                 }
             }
@@ -85,22 +85,19 @@ pipeline {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG_FILE
 
-                    echo "Using kubeconfig:"
-                    cat $KUBECONFIG_FILE
-
                     echo "Checking cluster access..."
                     kubectl get nodes
 
                     echo "Applying Kubernetes manifests..."
-                    kubectl apply -f k8s/ --validate=false
+                    kubectl apply -f k8s/
 
                     echo "Updating deployments..."
                     kubectl set image deployment/news-backend news-backend=${BACKEND_IMAGE}:${TAG}
                     kubectl set image deployment/news-frontend news-frontend=${FRONTEND_IMAGE}:${TAG}
 
                     echo "Waiting for rollout..."
-                    kubectl rollout status deployment/news-backend
-                    kubectl rollout status deployment/news-frontend
+                    kubectl rollout status deployment/news-backend --timeout=180s
+                    kubectl rollout status deployment/news-frontend --timeout=180s
                     '''
                 }
             }

@@ -2,14 +2,14 @@ server:
   port: ${PORT:8080}
 
 spring:
-  jackson:
-    serialization:
-      indent_output: true
   cache:
     type: redis
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 2s
 
 guardian:
   api:
@@ -24,6 +24,11 @@ news:
     enabled: true
   nyt:
     enabled: true
+  cache-ttl: 6h
+  provider-timeout: 5s
+  max-page-size: 25
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 management:
   endpoints:
@@ -32,9 +37,15 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: when_authorized
+  health:
+    probes:
+      enabled: true
 
 logging:
   level:
-    feign:
-      Logger: DEBUG
+    root: INFO
+
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}

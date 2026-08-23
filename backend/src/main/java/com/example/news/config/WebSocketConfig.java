@@ -17,7 +17,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/news-socket")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns("${news.cors.allowed-origins}")
                 .withSockJS();
     }
 }
