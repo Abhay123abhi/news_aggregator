@@ -14,7 +14,8 @@ A full-stack news search application that combines reporting from **The Guardian
 - Return `503 Service Unavailable` with a clear message when no provider succeeds.
 - Apply connection, read, and overall provider timeouts.
 - Validate pagination parameters and limit responses to 25 articles.
-- Display responsive loading, error, retry, pagination, and dark-mode states.
+- Display a responsive editorial workspace with a lead story, source metrics, quick topics, loading, error, retry, pagination, and dark-mode states.
+- Reserve a clearly labeled UI workspace for planned Spring AI summaries, news Q&A, topic clustering, and source comparison without exposing unfinished actions.
 - Deploy the frontend, backend, and Redis-compatible cache on Render's free tier.
 
 ## Architecture
