@@ -1,21 +1,26 @@
 package com.example.news.client.guardian;
 
 import com.example.news.client.NewsProviderClient;
+import com.example.news.exception.NewsProviderException;
 import com.example.news.model.NewsApiResult;
 import com.example.news.model.NewsArticle;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class GuardianClient implements NewsProviderClient {
 
+    private static final Logger log = LoggerFactory.getLogger(GuardianClient.class);
+
     private final GuardianFeignClient feignClient;
+
+    public GuardianClient(GuardianFeignClient feignClient) {
+        this.feignClient = feignClient;
+    }
 
     @Value("${guardian.api.key}")
     private String apiKey;
@@ -29,8 +34,7 @@ public class GuardianClient implements NewsProviderClient {
     public NewsApiResult search(String keyword, int page, int pageSize) {
 
         if (apiKey == null || apiKey.isBlank()) {
-            log.warn("Guardian API key missing");
-            return emptyResult();
+            throw new NewsProviderException("Guardian API key is not configured");
         }
 
         try {
@@ -43,8 +47,12 @@ public class GuardianClient implements NewsProviderClient {
 
             Map<String, Object> responseData = (Map<String, Object>) response.get("response");
 
-            int totalResults = (int) responseData.getOrDefault("total", 0);
-            int totalPages = (int) responseData.getOrDefault("pages", 0);
+            if (responseData == null) {
+                throw new NewsProviderException("Guardian returned an invalid response");
+            }
+
+            int totalResults = number(responseData.get("total"));
+            int totalPages = number(responseData.get("pages"));
 
             List<Map<String, Object>> results =
                     (List<Map<String, Object>>) responseData.getOrDefault("results", Collections.emptyList());
@@ -68,11 +76,14 @@ public class GuardianClient implements NewsProviderClient {
 
         } catch (Exception ex) {
             log.error("Guardian API error", ex);
-            return emptyResult();
+            if (ex instanceof NewsProviderException providerException) {
+                throw providerException;
+            }
+            throw new NewsProviderException("Guardian request failed", ex);
         }
     }
 
-    private NewsApiResult emptyResult() {
-        return new NewsApiResult(0, 0, Collections.emptyList());
+    private int number(Object value) {
+        return value instanceof Number number ? number.intValue() : 0;
     }
 }

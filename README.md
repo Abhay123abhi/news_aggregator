@@ -10,7 +10,8 @@ A full-stack news search application that combines reporting from **The Guardian
 - Return repeated searches from Redis without calling either external API again.
 - Normalize article URLs, remove duplicates, and sort newest stories first.
 - Continue serving results when one provider fails or Redis is temporarily unavailable.
-- Support cached-only searches with `offline=true`.
+- Treat `latest` and `latest-news` as aliases for provider-native newest stories.
+- Return `503 Service Unavailable` with a clear message when no provider succeeds.
 - Apply connection, read, and overall provider timeouts.
 - Validate pagination parameters and limit responses to 25 articles.
 - Display responsive loading, error, retry, pagination, and dark-mode states.
@@ -123,7 +124,7 @@ Provider requests are submitted concurrently using `CompletableFuture` and a vir
 Executors.newVirtualThreadPerTaskExecutor()
 ```
 
-Each provider receives its own task. Results are joined before aggregation, and a failed or timed-out provider contributes an empty result instead of failing the entire search.
+Each provider receives its own task. A failed or timed-out provider is excluded when another provider succeeds. If every enabled provider fails, the API returns `503 Service Unavailable` with a configuration hint instead of returning a misleading empty response.
 
 ### SOLID principles
 
@@ -204,13 +205,17 @@ cd backend
 .\gradlew.bat bootRun
 ```
 
+Environment variables apply only to processes started from that PowerShell window. If the backend is started from IntelliJ, add `GUARDIAN_API_KEY` and `NYT_API_KEY` under **Run/Debug Configuration → Environment variables**, then restart the application.
+
+The backend validates this configuration during startup. It starts when at least one enabled provider has an API key and fails immediately with a configuration message when neither key is available.
+
 The default Redis endpoint is `redis://localhost:6379`. Override it if necessary:
 
 ```bash
 export REDIS_URL="redis://localhost:6379"
 ```
 
-The application can still retrieve live articles if Redis is temporarily unavailable, but caching and offline mode will not work until Redis reconnects.
+The application can still retrieve live articles if Redis is temporarily unavailable, but caching will not work until Redis reconnects.
 
 ### Start the frontend
 
@@ -242,21 +247,30 @@ npm run build
 ### Search articles
 
 ```http
-GET /api/news?keyword=java&page=1&pageSize=12&offline=false
+GET /api/news?keyword=java&page=1&pageSize=12
 ```
 
 | Parameter | Default | Description |
 | --- | --- | --- |
-| `keyword` | `latest-news` | Search term sent to both providers. |
+| `keyword` | `latest` | Search term sent to both providers. `latest` and `latest-news` request provider-native newest stories. |
 | `page` | `1` | One-based result page. |
 | `pageSize` | `10` | Maximum articles returned; allowed range: 1–25. |
-| `offline` | `false` | When `true`, only return an existing Redis-cached result. |
 
 Example:
 
 ```bash
 curl "http://localhost:8080/api/news?keyword=java&page=1&pageSize=12"
 ```
+
+Latest stories do not require a literal search phrase:
+
+```bash
+curl "http://localhost:8080/api/news?page=1&pageSize=10"
+```
+
+`keyword=latest` and the older `keyword=latest-news` form produce the same request. The backend omits the provider query term and asks each provider for its newest articles.
+
+Redis does not download news. It stores only successful provider responses. On the first request for a search key, at least one enabled provider must have a valid API key and complete successfully. If every provider fails, the API returns `503` instead of a misleading empty `200` response.
 
 Health endpoints:
 

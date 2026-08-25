@@ -11,7 +11,7 @@ public interface NytFeignClient {
 
     @GetMapping("/svc/search/v2/articlesearch.json")
     Map<String, Object> search(
-            @RequestParam("q") String keyword,
+            @RequestParam(value = "q", required = false) String keyword,
             @RequestParam("page") int page,
             @RequestParam("sort") String sort,
             @RequestParam("api-key") String apiKey

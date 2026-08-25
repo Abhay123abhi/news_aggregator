@@ -4,7 +4,7 @@ import SearchForm from "./features/news/components/SearchForm";
 import NewsList from "./features/news/components/NewsList";
 import "./App.css";
 
-const DEFAULT_QUERY = "latest-news";
+const DEFAULT_QUERY = "latest";
 const DEFAULT_PAGE_SIZE = 12;
 
 function getSavedTheme() {
@@ -26,11 +26,15 @@ export default function App() {
     setSlowRequest(false);
     setError("");
     try {
-      const response = await newsApi.search(keyword, page, pageSize, false);
+      const response = await newsApi.search(keyword, page, pageSize);
       setData(response);
       setSearch({ keyword, pageSize });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "We couldn't load the news right now. Please try again.");
+      setError(
+        requestError.response?.data?.detail ||
+        requestError.response?.data?.message ||
+        "We couldn't load the news right now. Please try again."
+      );
     } finally {
       setLoading(false);
       setSlowRequest(false);
@@ -71,8 +75,7 @@ export default function App() {
     </header>
     <section className="content" aria-live="polite">
       <div className="results-header"><div><p className="section-label">LATEST RESULTS</p><h2>{resultSummary}</h2></div>{data.timeTakenMs != null && !loading && <span className="speed-badge">Updated in {(data.timeTakenMs / 1000).toFixed(1)}s</span>}</div>
-      {slowRequest && <div className="offline-banner" role="status">The free server is starting. Your first request can take about a minute.</div>}
-      {data.offline && <div className="offline-banner" role="status">You’re viewing cached results while providers are unavailable.</div>}
+      {slowRequest && <div className="startup-banner" role="status">The free server is starting. Your first request can take about a minute.</div>}
       <NewsList articles={data.articles || []} loading={loading} error={error} onRetry={() => loadNews(search.keyword, data.page || 1, search.pageSize)} />
       {!loading && !error && data.articles?.length > 0 && <nav className="pagination" aria-label="News result pages"><button type="button" onClick={() => handlePageChange(data.prevPage)} disabled={!data.prevPage}>← Previous</button><span>Page {data.page || 1}</span><button type="button" onClick={() => handlePageChange(data.nextPage)} disabled={!data.nextPage}>Next →</button></nav>}
     </section>
