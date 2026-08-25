@@ -11,7 +11,7 @@ public interface GuardianFeignClient {
 
     @GetMapping("/search")
     Map<String, Object> search(
-            @RequestParam("q") String keyword,
+            @RequestParam(value = "q", required = false) String keyword,
             @RequestParam("page") int page,
             @RequestParam("page-size") int pageSize,
             @RequestParam("show-fields") String fields,

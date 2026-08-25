@@ -12,7 +12,6 @@ public record SearchResponse(
         int totalPages,
         Integer prevPage,
         Integer nextPage,
-        boolean offline,
         long timeTakenMs,
         List<NewsArticle> articles
 ) {

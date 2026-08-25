@@ -1,6 +1,7 @@
 package com.example.news.service;
 
 import com.example.news.client.NewsProviderClient;
+import com.example.news.exception.NewsUnavailableException;
 import com.example.news.model.NewsApiResult;
 import com.example.news.model.NewsArticle;
 import com.example.news.model.SearchResponse;
@@ -44,71 +45,70 @@ public class AggregationService {
         this.providerExecutor = providerExecutor;
     }
 
-    public SearchResponse search(String keyword, int page, int pageSize, boolean offline) {
+    public SearchResponse search(String keyword, int page, int pageSize) {
 
         Instant startTime = Instant.now();
 
-        String searchQuery = (keyword == null || keyword.isBlank()) ? "latest" : keyword.trim();
+        String searchQuery = normalizeSearchKeyword(keyword);
+        String providerQuery = "latest".equals(searchQuery) ? null : searchQuery;
         int currentPage = (page < 1) ? DEFAULT_PAGE : page;
         int size = (pageSize <= 0) ? DEFAULT_PAGE_SIZE : Math.min(pageSize, 25);
 
         List<NewsArticle> allArticles = new ArrayList<>();
         int totalAvailableArticles = 0;
         int availablePages = currentPage;
-        boolean usedOffline = false;
 
-        if (offline) {
-            NewsApiResult cached = loadCachedResult(searchQuery, currentPage, size);
+        NewsApiResult cached = loadCachedResult(searchQuery, currentPage, size);
 
-            if (cached != null) {
-                allArticles.addAll(cached.articles());
-                usedOffline = true;
+        if (cached != null && !cached.articles().isEmpty()) {
+            allArticles.addAll(cached.articles());
+            totalAvailableArticles = cached.totalResults();
+            availablePages = Math.max(currentPage, cached.totalPages());
+            log.info("Cache hit for keyword {}, page {}, page size {}", searchQuery, currentPage, size);
+        } else {
+            List<NewsProviderClient> activeProviders = providers.stream()
+                    .filter(provider -> isProviderEnabled(provider.getProviderName()))
+                    .toList();
+
+            if (activeProviders.isEmpty()) {
+                throw new NewsUnavailableException("No news provider is enabled");
             }
 
-            log.info("Offline mode requested; loaded {} cached articles", allArticles.size());
-        } else {
-            NewsApiResult cached = loadCachedResult(searchQuery, currentPage, size);
+            List<ProviderTask> providerTasks = activeProviders.stream()
+                    .map(provider -> new ProviderTask(
+                            provider.getProviderName(),
+                            CompletableFuture.supplyAsync(
+                                            () -> provider.search(providerQuery, currentPage, size),
+                                            providerExecutor
+                                    )
+                                    .orTimeout(providerTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    ))
+                    .toList();
 
-            if (cached != null && !cached.articles().isEmpty()) {
-                allArticles.addAll(cached.articles());
-                totalAvailableArticles = cached.totalResults();
-                availablePages = Math.max(currentPage, cached.totalPages());
-                log.info("Cache hit for keyword {}, page {}, page size {}", searchQuery, currentPage, size);
-            } else {
-                List<NewsProviderClient> activeProviders = providers.stream()
-                        .filter(provider -> isProviderEnabled(provider.getProviderName()))
-                        .toList();
+            int successfulProviders = 0;
 
-                List<CompletableFuture<NewsApiResult>> futures = activeProviders.stream()
-                        .map(provider -> CompletableFuture.supplyAsync(
-                                        () -> provider.search(searchQuery, currentPage, size), providerExecutor)
-                                .completeOnTimeout(emptyResult(), providerTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                                .exceptionally(ex -> {
-                                    log.warn("Provider {} failed", provider.getProviderName(), ex);
-                                    return emptyResult();
-                                }))
-                        .toList();
-
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-                for (CompletableFuture<NewsApiResult> future : futures) {
-                    NewsApiResult result = future.join();
+            for (ProviderTask task : providerTasks) {
+                try {
+                    NewsApiResult result = task.future().join();
+                    successfulProviders++;
                     allArticles.addAll(result.articles());
                     totalAvailableArticles += result.totalResults();
                     availablePages = Math.max(availablePages, result.totalPages());
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                    log.warn("Provider {} failed: {}", task.providerName(), cause.getMessage());
                 }
+            }
 
-                if (!allArticles.isEmpty()) {
-                    saveCachedResult(searchQuery, currentPage, size,
-                            new NewsApiResult(totalAvailableArticles, availablePages, List.copyOf(allArticles)));
-                } else {
-                    NewsApiResult fallback = loadCachedResult(searchQuery, currentPage, size);
-                    if (fallback != null && !fallback.articles().isEmpty()) {
-                        log.warn("Using cached results for keyword {} after provider failures", searchQuery);
-                        allArticles.addAll(fallback.articles());
-                        usedOffline = true;
-                    }
-                }
+            if (successfulProviders == 0) {
+                throw new NewsUnavailableException(
+                        "No news provider completed successfully. Configure GUARDIAN_API_KEY or NYT_API_KEY and check the server logs."
+                );
+            }
+
+            if (!allArticles.isEmpty()) {
+                saveCachedResult(searchQuery, currentPage, size,
+                        new NewsApiResult(totalAvailableArticles, availablePages, List.copyOf(allArticles)));
             }
         }
 
@@ -130,10 +130,9 @@ public class AggregationService {
                 .toList();
 
         long timeTaken = Duration.between(startTime, Instant.now()).toMillis();
-        int totalArticles = usedOffline ? uniqueArticles.size()
-                : Math.max(totalAvailableArticles, uniqueArticles.size());
-        int totalPages = usedOffline ? currentPage : availablePages;
-        Integer nextPage = !usedOffline && currentPage < totalPages ? currentPage + 1 : null;
+        int totalArticles = Math.max(totalAvailableArticles, uniqueArticles.size());
+        int totalPages = availablePages;
+        Integer nextPage = currentPage < totalPages ? currentPage + 1 : null;
 
         return new SearchResponse(
                 "News Aggregator",
@@ -145,7 +144,6 @@ public class AggregationService {
                 totalPages,
                 currentPage > 1 ? currentPage - 1 : null,
                 nextPage,
-                usedOffline,
                 timeTaken,
                 uniqueArticles
         );
@@ -167,8 +165,15 @@ public class AggregationService {
         return s;
     }
 
-    private NewsApiResult emptyResult() {
-        return new NewsApiResult(0, 0, List.of());
+    private String normalizeSearchKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return "latest";
+        }
+
+        String normalized = keyword.trim();
+        return normalized.equalsIgnoreCase("latest-news") || normalized.equalsIgnoreCase("latest")
+                ? "latest"
+                : normalized;
     }
 
     private NewsApiResult loadCachedResult(String keyword, int page, int pageSize) {
@@ -186,5 +191,11 @@ public class AggregationService {
         } catch (RuntimeException ex) {
             log.warn("Unable to cache articles for keyword {}", keyword, ex);
         }
+    }
+
+    private record ProviderTask(
+            String providerName,
+            CompletableFuture<NewsApiResult> future
+    ) {
     }
 }
