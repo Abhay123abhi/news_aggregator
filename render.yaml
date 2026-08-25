@@ -20,6 +20,12 @@ services:
         sync: false
       - key: NYT_API_KEY
         sync: false
+      - key: NEWS_CONNECT_TIMEOUT_MS
+        value: "10000"
+      - key: NEWS_READ_TIMEOUT_MS
+        value: "20000"
+      - key: NEWS_PROVIDER_TIMEOUT
+        value: 35s
       - key: REDIS_URL
         fromService:
           type: keyvalue

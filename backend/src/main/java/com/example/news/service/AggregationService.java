@@ -86,6 +86,7 @@ public class AggregationService {
                     .toList();
 
             int successfulProviders = 0;
+            int timedOutProviders = 0;
 
             for (ProviderTask task : providerTasks) {
                 try {
@@ -96,11 +97,26 @@ public class AggregationService {
                     availablePages = Math.max(availablePages, result.totalPages());
                 } catch (CompletionException ex) {
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
-                    log.warn("Provider {} failed: {}", task.providerName(), cause.getMessage());
+                    if (cause instanceof TimeoutException) {
+                        timedOutProviders++;
+                        log.warn("Provider {} timed out after {} ms",
+                                task.providerName(), providerTimeout.toMillis());
+                    } else {
+                        String message = cause.getMessage() == null
+                                ? cause.getClass().getSimpleName()
+                                : cause.getMessage();
+                        log.warn("Provider {} failed: {}", task.providerName(), message);
+                    }
                 }
             }
 
             if (successfulProviders == 0) {
+                if (timedOutProviders == activeProviders.size()) {
+                    throw new NewsUnavailableException(
+                            "All news providers timed out after " + providerTimeout.toSeconds()
+                                    + " seconds. Check upstream connectivity or increase NEWS_PROVIDER_TIMEOUT."
+                    );
+                }
                 throw new NewsUnavailableException(
                         "No news provider completed successfully. Configure GUARDIAN_API_KEY or NYT_API_KEY and check the server logs."
                 );

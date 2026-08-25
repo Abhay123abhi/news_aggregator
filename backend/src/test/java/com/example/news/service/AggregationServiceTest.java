@@ -142,6 +142,21 @@ class AggregationServiceTest {
                 .hasMessageContaining("GUARDIAN_API_KEY");
     }
 
+    @Test
+    void explainsWhenEveryProviderTimesOut() {
+        ReflectionTestUtils.setField(service, "providerTimeout", Duration.ofMillis(25));
+        when(provider.getProviderName()).thenReturn("Guardian");
+        when(provider.search("java", 1, 12)).thenAnswer(invocation -> {
+            Thread.sleep(250);
+            return new NewsApiResult(1, 1, List.of(article("https://example.com/slow")));
+        });
+
+        assertThatThrownBy(() -> service.search("java", 1, 12))
+                .isInstanceOf(NewsUnavailableException.class)
+                .hasMessageContaining("timed out")
+                .hasMessageContaining("NEWS_PROVIDER_TIMEOUT");
+    }
+
     private NewsArticle article(String url) {
         return new NewsArticle("Headline", "Description", url, "The Guardian", "2026-08-23T10:00:00Z", null);
     }
