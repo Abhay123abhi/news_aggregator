@@ -15,7 +15,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class GuardianClient implements NewsProviderClient {
 
-    private final com.example.news.client.guardian.GuardianFeignClient feignClient;
+    private final GuardianFeignClient feignClient;
 
     @Value("${guardian.api.key}")
     private String apiKey;

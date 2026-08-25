@@ -17,8 +17,6 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 RUN addgroup -S app && adduser -S app -G app
 USER app
 
-# Expose Spring Boot default port
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:InitialRAMPercentage=20.0", "-XX:MaxRAMPercentage=60.0", "-jar", "app.jar"]

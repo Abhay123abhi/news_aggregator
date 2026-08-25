@@ -58,47 +58,56 @@ public class AggregationService {
         boolean usedOffline = false;
 
         if (offline) {
-            List<NewsArticle> cached = loadCachedArticles(searchQuery, currentPage, size);
+            NewsApiResult cached = loadCachedResult(searchQuery, currentPage, size);
 
             if (cached != null) {
-                allArticles = cached;
+                allArticles.addAll(cached.articles());
                 usedOffline = true;
             }
 
             log.info("Offline mode requested; loaded {} cached articles", allArticles.size());
         } else {
+            NewsApiResult cached = loadCachedResult(searchQuery, currentPage, size);
 
-            // Filter enabled providers dynamically
-            List<NewsProviderClient> activeProviders = providers.stream()
-                    .filter(p -> isProviderEnabled(p.getProviderName()))
-                    .toList();
-
-            List<CompletableFuture<NewsApiResult>> futures = activeProviders.stream()
-                    .map(provider -> CompletableFuture.supplyAsync(
-                            () -> provider.search(searchQuery, currentPage, size), providerExecutor)
-                            .completeOnTimeout(emptyResult(), providerTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                            .exceptionally(ex -> {
-                                log.warn("Provider {} failed", provider.getProviderName(), ex);
-                                return emptyResult();
-                            }))
-                    .toList();
-
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-            for (CompletableFuture<NewsApiResult> future : futures) {
-                NewsApiResult result = future.join();
-                allArticles.addAll(result.articles());
-                totalAvailableArticles += result.totalResults();
-                availablePages = Math.max(availablePages, result.totalPages());
-            }
-            if (!allArticles.isEmpty()) {
-                saveCachedArticles(searchQuery, currentPage, size, allArticles);
+            if (cached != null && !cached.articles().isEmpty()) {
+                allArticles.addAll(cached.articles());
+                totalAvailableArticles = cached.totalResults();
+                availablePages = Math.max(currentPage, cached.totalPages());
+                log.info("Cache hit for keyword {}, page {}, page size {}", searchQuery, currentPage, size);
             } else {
-                List<NewsArticle> cached = loadCachedArticles(searchQuery, currentPage, size);
-                if (cached != null && !cached.isEmpty()) {
-                    log.warn("Using cached results for keyword {}", searchQuery);
-                    allArticles = cached;
-                    usedOffline = true;
+                List<NewsProviderClient> activeProviders = providers.stream()
+                        .filter(provider -> isProviderEnabled(provider.getProviderName()))
+                        .toList();
+
+                List<CompletableFuture<NewsApiResult>> futures = activeProviders.stream()
+                        .map(provider -> CompletableFuture.supplyAsync(
+                                        () -> provider.search(searchQuery, currentPage, size), providerExecutor)
+                                .completeOnTimeout(emptyResult(), providerTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                                .exceptionally(ex -> {
+                                    log.warn("Provider {} failed", provider.getProviderName(), ex);
+                                    return emptyResult();
+                                }))
+                        .toList();
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+                for (CompletableFuture<NewsApiResult> future : futures) {
+                    NewsApiResult result = future.join();
+                    allArticles.addAll(result.articles());
+                    totalAvailableArticles += result.totalResults();
+                    availablePages = Math.max(availablePages, result.totalPages());
+                }
+
+                if (!allArticles.isEmpty()) {
+                    saveCachedResult(searchQuery, currentPage, size,
+                            new NewsApiResult(totalAvailableArticles, availablePages, List.copyOf(allArticles)));
+                } else {
+                    NewsApiResult fallback = loadCachedResult(searchQuery, currentPage, size);
+                    if (fallback != null && !fallback.articles().isEmpty()) {
+                        log.warn("Using cached results for keyword {} after provider failures", searchQuery);
+                        allArticles.addAll(fallback.articles());
+                        usedOffline = true;
+                    }
                 }
             }
         }
@@ -162,7 +171,7 @@ public class AggregationService {
         return new NewsApiResult(0, 0, List.of());
     }
 
-    private List<NewsArticle> loadCachedArticles(String keyword, int page, int pageSize) {
+    private NewsApiResult loadCachedResult(String keyword, int page, int pageSize) {
         try {
             return cacheService.load(keyword, page, pageSize);
         } catch (RuntimeException ex) {
@@ -171,9 +180,9 @@ public class AggregationService {
         }
     }
 
-    private void saveCachedArticles(String keyword, int page, int pageSize, List<NewsArticle> articles) {
+    private void saveCachedResult(String keyword, int page, int pageSize, NewsApiResult result) {
         try {
-            cacheService.save(keyword, page, pageSize, articles);
+            cacheService.save(keyword, page, pageSize, result);
         } catch (RuntimeException ex) {
             log.warn("Unable to cache articles for keyword {}", keyword, ex);
         }

@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +59,7 @@ class AggregationServiceTest {
         assertThat(response.totalArticles()).isEqualTo(36);
         assertThat(response.totalPages()).isEqualTo(3);
         assertThat(response.nextPage()).isEqualTo(2);
-        verify(cacheService).save("java", 1, 12, List.of(article));
+        verify(cacheService).save("java", 1, 12, new NewsApiResult(36, 3, List.of(article)));
     }
 
     @Test
@@ -76,15 +77,60 @@ class AggregationServiceTest {
     @Test
     void fallsBackToCacheWhenProviderReturnsNoArticles() {
         NewsArticle article = article("https://example.com/cached");
+        NewsApiResult cached = new NewsApiResult(10, 1, List.of(article));
         when(provider.getProviderName()).thenReturn("Guardian");
         when(provider.search("java", 1, 12)).thenReturn(new NewsApiResult(0, 0, List.of()));
-        when(cacheService.load("java", 1, 12)).thenReturn(List.of(article));
+        when(cacheService.load("java", 1, 12)).thenReturn(null, cached);
 
         SearchResponse response = service.search("java", 1, 12, false);
 
         assertThat(response.offline()).isTrue();
         assertThat(response.articles()).containsExactly(article);
         assertThat(response.nextPage()).isNull();
+    }
+
+    @Test
+    void returnsCachedResultWithoutCallingProviders() {
+        NewsArticle article = article("https://example.com/cached");
+        when(cacheService.load("java", 1, 12))
+                .thenReturn(new NewsApiResult(36, 3, List.of(article)));
+
+        SearchResponse response = service.search("java", 1, 12, false);
+
+        assertThat(response.articles()).containsExactly(article);
+        assertThat(response.totalArticles()).isEqualTo(36);
+        assertThat(response.nextPage()).isEqualTo(2);
+        assertThat(response.offline()).isFalse();
+        verifyNoInteractions(provider);
+    }
+
+    @Test
+    void servesOfflineSearchWithoutCallingProviders() {
+        NewsArticle article = article("https://example.com/offline");
+        when(cacheService.load("java", 1, 12))
+                .thenReturn(new NewsApiResult(36, 3, List.of(article)));
+
+        SearchResponse response = service.search("java", 1, 12, true);
+
+        assertThat(response.articles()).containsExactly(article);
+        assertThat(response.offline()).isTrue();
+        assertThat(response.nextPage()).isNull();
+        verifyNoInteractions(provider);
+    }
+
+    @Test
+    void continuesWithLiveProvidersWhenRedisIsUnavailable() {
+        NewsArticle article = article("https://example.com/live");
+        when(cacheService.load("java", 1, 12))
+                .thenThrow(new IllegalStateException("Redis unavailable"));
+        when(provider.getProviderName()).thenReturn("Guardian");
+        when(provider.search("java", 1, 12))
+                .thenReturn(new NewsApiResult(12, 1, List.of(article)));
+
+        SearchResponse response = service.search("java", 1, 12, false);
+
+        assertThat(response.articles()).containsExactly(article);
+        assertThat(response.offline()).isFalse();
     }
 
     private NewsArticle article(String url) {
