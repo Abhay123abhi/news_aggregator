@@ -6,11 +6,16 @@ import "./App.css";
 
 const DEFAULT_QUERY = "latest";
 const DEFAULT_PAGE_SIZE = 12;
+const QUICK_TOPICS = ["latest", "technology", "business", "climate", "science", "world"];
 
 function getSavedTheme() {
   const savedTheme = window.localStorage.getItem("news-theme");
   if (savedTheme) return savedTheme;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function labelForTopic(topic) {
+  return topic === "latest" ? "Top stories" : topic.charAt(0).toUpperCase() + topic.slice(1);
 }
 
 export default function App() {
@@ -53,32 +58,90 @@ export default function App() {
   }, [theme]);
 
   const resultSummary = useMemo(() => {
-    if (loading) return "Finding the latest stories…";
+    if (loading) return "Building your briefing…";
     if (!data.articles?.length) return "No stories found";
-    return `${data.articles.length} stories for “${data.searchKeyword || search.keyword}”`;
+    return labelForTopic(data.searchKeyword || search.keyword);
   }, [data, loading, search.keyword]);
+
+  const sourceCount = useMemo(
+    () => new Set((data.articles || []).map((article) => article.source).filter(Boolean)).size,
+    [data.articles]
+  );
 
   const handleSearch = (keyword, pageSize) => loadNews(keyword, 1, pageSize);
   const handlePageChange = (page) => loadNews(search.keyword, page, search.pageSize);
+  const handleTopicChange = (topic) => loadNews(topic, 1, search.pageSize);
 
-  return <main className="app-shell">
-    <header className="hero">
+  return <div className="app-shell">
+    <header className="site-header">
       <nav className="topbar" aria-label="Primary navigation">
-        <a className="brand" href="/" aria-label="Newsroom home"><span className="brand-mark" aria-hidden="true">N</span><span>Newsroom</span></a>
-        <button className="theme-toggle" type="button" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light" : "Dark"}</button>
+        <a className="brand" href="/" aria-label="Newsroom home">
+          <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+          <span className="brand-copy"><strong>Newsroom</strong><small>INTELLIGENCE</small></span>
+        </a>
+        <div className="nav-links" aria-label="Page sections">
+          <a className="active" href="#stories">Discover</a>
+          <a href="#ai-workspace">AI workspace <span>Soon</span></a>
+        </div>
+        <button className="theme-toggle" type="button" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
+          <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+          <span className="theme-label">{theme === "dark" ? "Light" : "Dark"}</span>
+        </button>
       </nav>
-      <div className="hero-content">
-        <p className="eyebrow">YOUR DAILY BRIEFING</p><h1>Follow the stories<br />that matter.</h1>
-        <p className="hero-copy">Search trusted reporting from The Guardian and The New York Times in one focused, distraction-free space.</p>
-        <SearchForm initialKeyword={search.keyword} initialPageSize={search.pageSize} onSearch={handleSearch} loading={loading} />
-      </div>
     </header>
-    <section className="content" aria-live="polite">
-      <div className="results-header"><div><p className="section-label">LATEST RESULTS</p><h2>{resultSummary}</h2></div>{data.timeTakenMs != null && !loading && <span className="speed-badge">Updated in {(data.timeTakenMs / 1000).toFixed(1)}s</span>}</div>
-      {slowRequest && <div className="startup-banner" role="status">The free server is starting. Your first request can take about a minute.</div>}
-      <NewsList articles={data.articles || []} loading={loading} error={error} onRetry={() => loadNews(search.keyword, data.page || 1, search.pageSize)} />
-      {!loading && !error && data.articles?.length > 0 && <nav className="pagination" aria-label="News result pages"><button type="button" onClick={() => handlePageChange(data.prevPage)} disabled={!data.prevPage}>← Previous</button><span>Page {data.page || 1}</span><button type="button" onClick={() => handlePageChange(data.nextPage)} disabled={!data.nextPage}>Next →</button></nav>}
-    </section>
-    <footer>Newsroom aggregates public reporting. Always read the original source for full context.</footer>
-  </main>;
+
+    <main>
+      <section className="hero">
+        <div className="hero-copy-block">
+          <div className="live-label"><span aria-hidden="true" /> LIVE NEWS DISCOVERY</div>
+          <h1>See the whole story.<br /><em>Find the signal.</em></h1>
+          <p>One focused view of trusted reporting from The Guardian and The New York Times—designed to become your AI-powered news workspace.</p>
+          <SearchForm initialKeyword={search.keyword} initialPageSize={search.pageSize} onSearch={handleSearch} loading={loading} />
+          <div className="quick-topics" aria-label="Quick topics">
+            <span>Explore</span>
+            {QUICK_TOPICS.map((topic) => <button className={search.keyword.toLowerCase() === topic ? "selected" : ""} type="button" key={topic} onClick={() => handleTopicChange(topic)} disabled={loading}>{labelForTopic(topic)}</button>)}
+          </div>
+        </div>
+
+        <aside className="source-board" aria-label="Connected news sources">
+          <div className="source-board-head"><div><span>LIVE INPUTS</span><strong>Source network</strong></div><span className="pulse-ring"><i /></span></div>
+          <div className="source-row"><span className="source-icon guardian">G</span><div><strong>The Guardian</strong><small>Global reporting</small></div><span className="connected">Connected</span></div>
+          <div className="source-row"><span className="source-icon nyt">T</span><div><strong>The New York Times</strong><small>Article Search</small></div><span className="connected">Connected</span></div>
+          <div className="ai-ready"><span className="spark" aria-hidden="true">✦</span><div><strong>AI-ready foundation</strong><p>Summaries, topic clusters and source comparison fit here next.</p></div></div>
+        </aside>
+      </section>
+
+      <section className="content" id="stories" aria-live="polite">
+        <div className="results-header">
+          <div><p className="section-label">YOUR NEWS FEED</p><h2>{resultSummary}</h2></div>
+          {!loading && !error && <div className="result-metrics"><span><strong>{data.articles?.length || 0}</strong> shown</span><span><strong>{sourceCount}</strong> sources</span>{data.timeTakenMs != null && <span><strong>{data.timeTakenMs < 1000 ? `${data.timeTakenMs}ms` : `${(data.timeTakenMs / 1000).toFixed(1)}s`}</strong> response</span>}</div>}
+        </div>
+
+        {slowRequest && <div className="startup-banner" role="status"><span aria-hidden="true">◷</span><div><strong>Waking the news service</strong><p>The free server is starting. Your first request can take about a minute.</p></div></div>}
+
+        <div className="workspace-grid">
+          <div className="feed-column">
+            <NewsList articles={data.articles || []} loading={loading} error={error} onRetry={() => loadNews(search.keyword, data.page || 1, search.pageSize)} />
+            {!loading && !error && data.articles?.length > 0 && <nav className="pagination" aria-label="News result pages">
+              <button type="button" onClick={() => handlePageChange(data.prevPage)} disabled={!data.prevPage}><span aria-hidden="true">←</span> Previous</button>
+              <span>Page <strong>{data.page || 1}</strong>{data.totalPages > 1 && ` of ${data.totalPages}`}</span>
+              <button type="button" onClick={() => handlePageChange(data.nextPage)} disabled={!data.nextPage}>Next <span aria-hidden="true">→</span></button>
+            </nav>}
+          </div>
+
+          <aside className="ai-panel" id="ai-workspace">
+            <div className="ai-panel-head"><span className="spark" aria-hidden="true">✦</span><span>AI WORKSPACE</span><small>COMING NEXT</small></div>
+            <h3>Turn headlines into understanding.</h3>
+            <p className="ai-intro">The next release can add intelligence without changing this news experience.</p>
+            <div className="ai-feature"><span>01</span><div><strong>Daily AI brief</strong><p>Summarize the important developments across sources.</p></div></div>
+            <div className="ai-feature"><span>02</span><div><strong>Ask the news</strong><p>Question retrieved articles with source-backed answers.</p></div></div>
+            <div className="ai-feature"><span>03</span><div><strong>Compare coverage</strong><p>See how publishers frame the same event differently.</p></div></div>
+            <div className="ai-foundation"><span aria-hidden="true">✓</span><p><strong>Ready for Spring AI + RAG</strong><br />Current articles already form the retrieval layer.</p></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer><div><span className="footer-brand">Newsroom Intelligence</span><p>Reporting stays with its original publisher. Open every source for complete context.</p></div><span>Guardian + NYT</span></footer>
+  </div>;
 }
