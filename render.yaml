@@ -11,9 +11,10 @@ services:
     region: singapore
     runtime: docker
     plan: free
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    healthCheckPath: /actuator/health
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health/liveness
     envVars:
       - key: GUARDIAN_API_KEY
         sync: false
@@ -30,8 +31,12 @@ services:
   - type: web
     name: abhay123abhi-news-web
     runtime: static
-    buildCommand: cd frontend && npm ci && npm run build
-    staticPublishPath: ./frontend/build
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
     routes:
       - type: rewrite
         source: /api/*

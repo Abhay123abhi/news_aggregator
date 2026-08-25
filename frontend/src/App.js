@@ -18,10 +18,12 @@ export default function App() {
   const [search, setSearch] = useState({ keyword: DEFAULT_QUERY, pageSize: DEFAULT_PAGE_SIZE });
   const [data, setData] = useState({ articles: [], page: 1, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [slowRequest, setSlowRequest] = useState(false);
   const [error, setError] = useState("");
 
   const loadNews = useCallback(async (keyword, page, pageSize) => {
     setLoading(true);
+    setSlowRequest(false);
     setError("");
     try {
       const response = await newsApi.search(keyword, page, pageSize, false);
@@ -31,10 +33,16 @@ export default function App() {
       setError(requestError.response?.data?.message || "We couldn't load the news right now. Please try again.");
     } finally {
       setLoading(false);
+      setSlowRequest(false);
     }
   }, []);
 
   useEffect(() => { loadNews(DEFAULT_QUERY, 1, DEFAULT_PAGE_SIZE); }, [loadNews]);
+  useEffect(() => {
+    if (!loading) return undefined;
+    const timer = window.setTimeout(() => setSlowRequest(true), 10000);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("news-theme", theme);
@@ -63,6 +71,7 @@ export default function App() {
     </header>
     <section className="content" aria-live="polite">
       <div className="results-header"><div><p className="section-label">LATEST RESULTS</p><h2>{resultSummary}</h2></div>{data.timeTakenMs != null && !loading && <span className="speed-badge">Updated in {(data.timeTakenMs / 1000).toFixed(1)}s</span>}</div>
+      {slowRequest && <div className="offline-banner" role="status">The free server is starting. Your first request can take about a minute.</div>}
       {data.offline && <div className="offline-banner" role="status">You’re viewing cached results while providers are unavailable.</div>}
       <NewsList articles={data.articles || []} loading={loading} error={error} onRetry={() => loadNews(search.keyword, data.page || 1, search.pageSize)} />
       {!loading && !error && data.articles?.length > 0 && <nav className="pagination" aria-label="News result pages"><button type="button" onClick={() => handlePageChange(data.prevPage)} disabled={!data.prevPage}>← Previous</button><span>Page {data.page || 1}</span><button type="button" onClick={() => handlePageChange(data.nextPage)} disabled={!data.nextPage}>Next →</button></nav>}

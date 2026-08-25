@@ -15,7 +15,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class NytClient implements NewsProviderClient {
 
-    private final com.example.news.client.nyt.NytFeignClient feignClient;
+    private final NytFeignClient feignClient;
 
     @Value("${nyt.api.key}")
     private String apiKey;
