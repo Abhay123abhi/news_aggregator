@@ -316,6 +316,7 @@ If Render assigns service URLs different from those shown in `render.yaml`, upda
 
 - Free backend instances sleep after inactivity; the next request can take about a minute.
 - The frontend allows up to 90 seconds for a response and explains when the server is waking up.
+- Provider connections allow 10 seconds, response reads allow 20 seconds, and each complete provider request allows 35 seconds to accommodate slower free instances.
 - Free Key Value instances are in-memory only and can lose cached entries on restart.
 - Render allows only one free Key Value instance per workspace.
 - Free services remain subject to Render's monthly instance-hour, build-minute, and bandwidth limits.
@@ -338,5 +339,8 @@ The cache-aside design provides a simpler fit for the free tier: articles refres
 | `PORT` | Automatically configured | `8080` | HTTP port assigned by Render. |
 | `CORS_ALLOWED_ORIGINS` | Configured in Blueprint | `http://localhost:3000` | Permitted browser origin. |
 | `NEWS_CACHE_TTL` | No | `30m` | Cached search-result lifetime. |
+| `NEWS_CONNECT_TIMEOUT_MS` | Configured in Blueprint | `10000` | Provider connection timeout in milliseconds. |
+| `NEWS_READ_TIMEOUT_MS` | Configured in Blueprint | `20000` | Provider response-read timeout in milliseconds. |
+| `NEWS_PROVIDER_TIMEOUT` | Configured in Blueprint | `35s` | Maximum duration of one concurrent provider request. |
 | `NODE_VERSION` | Configured in Blueprint | `22` | Frontend build runtime. |
 | `SWAGGER_ENABLED` | No | `false` | Enables Swagger UI for trusted development. |

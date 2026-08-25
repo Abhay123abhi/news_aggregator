@@ -9,8 +9,8 @@ spring:
       client:
         config:
           default:
-            connectTimeout: 2000
-            readTimeout: 4000
+            connectTimeout: ${NEWS_CONNECT_TIMEOUT_MS:10000}
+            readTimeout: ${NEWS_READ_TIMEOUT_MS:20000}
   data:
     redis:
       url: ${REDIS_URL:redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}}
@@ -33,7 +33,7 @@ news:
   nyt:
     enabled: true
   cache-ttl: ${NEWS_CACHE_TTL:30m}
-  provider-timeout: 5s
+  provider-timeout: ${NEWS_PROVIDER_TIMEOUT:35s}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
