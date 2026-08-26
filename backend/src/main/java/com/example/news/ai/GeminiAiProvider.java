@@ -26,22 +26,14 @@ public class GeminiAiProvider implements AiProvider {
 
     @Override
     public String generate(String systemPrompt, String userPrompt) {
-        if (apiKey == null || apiKey.isBlank()) {
+        if (!isConfigured()) {
             throw new IllegalStateException("AI is not configured. Set GEMINI_API_KEY.");
         }
 
         Map<String, Object> body = Map.of(
-                "system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", systemPrompt))
-                ),
-                "contents", List.of(Map.of(
-                        "role", "user",
-                        "parts", List.of(Map.of("text", userPrompt))
-                )),
-                "generationConfig", Map.of(
-                        "temperature", 0.2,
-                        "maxOutputTokens", 700
-                )
+                "system_instruction", Map.of("parts", List.of(Map.of("text", systemPrompt))),
+                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt)))),
+                "generationConfig", Map.of("temperature", 0.2, "maxOutputTokens", 700)
         );
 
         GeminiResponse response = restClient.post()
@@ -71,6 +63,11 @@ public class GeminiAiProvider implements AiProvider {
     @Override
     public String modelName() {
         return model;
+    }
+
+    @Override
+    public boolean isConfigured() {
+        return apiKey != null && !apiKey.isBlank();
     }
 
     private record GeminiResponse(List<Candidate> candidates) {}
