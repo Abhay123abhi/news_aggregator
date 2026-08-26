@@ -20,6 +20,11 @@ public class AiController {
         this.aiInsightService = aiInsightService;
     }
 
+    @GetMapping("/status")
+    public ResponseEntity<AiStatus> status() {
+        return ResponseEntity.ok(new AiStatus(aiInsightService.isEnabled()));
+    }
+
     @PostMapping("/summary")
     public ResponseEntity<AiInsightService.AiResult> summarize(@Valid @RequestBody ArticleRequest request) {
         return ResponseEntity.ok(aiInsightService.summarize(request.article()));
@@ -45,6 +50,7 @@ public class AiController {
         return ResponseEntity.ok(aiInsightService.ask(request.question(), request.articles()));
     }
 
+    public record AiStatus(boolean enabled) {}
     public record ArticleRequest(NewsArticle article) {}
     public record ArticlesRequest(@NotEmpty List<NewsArticle> articles) {}
     public record AskRequest(@NotBlank String question, @NotEmpty List<NewsArticle> articles) {}
