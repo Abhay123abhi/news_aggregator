@@ -2,6 +2,18 @@ import { useEffect, useState } from "react";
 import aiApi from "../api/aiApi";
 import "./AiWorkspace.css";
 
+function DisabledAiWorkspace() {
+  return <aside className="ai-panel" id="ai-workspace">
+    <div className="ai-panel-head"><span className="spark" aria-hidden="true">✦</span><span>AI WORKSPACE</span><small>COMING NEXT</small></div>
+    <h3>Turn headlines into understanding.</h3>
+    <p className="ai-intro">The next release can add intelligence without changing this news experience.</p>
+    <div className="ai-feature"><span>01</span><div><strong>Daily AI brief</strong><p>Summarize the important developments across sources.</p></div></div>
+    <div className="ai-feature"><span>02</span><div><strong>Ask the news</strong><p>Question retrieved articles with source-backed answers.</p></div></div>
+    <div className="ai-feature"><span>03</span><div><strong>Compare coverage</strong><p>See how publishers frame the same event differently.</p></div></div>
+    <div className="ai-foundation"><span aria-hidden="true">✓</span><p><strong>Ready for source-grounded AI</strong><br />The core news experience remains independent of the AI provider.</p></div>
+  </aside>;
+}
+
 export default function AiWorkspace({ articles }) {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState("");
@@ -40,7 +52,7 @@ export default function AiWorkspace({ articles }) {
     run(() => aiApi.ask(question.trim(), articles));
   };
 
-  if (!enabled) return null;
+  if (!enabled) return <DisabledAiWorkspace />;
 
   return <aside className="ai-panel" id="ai-workspace">
     <div className="ai-panel-head"><span className="spark" aria-hidden="true">✦</span><span>AI WORKSPACE</span><small>LIVE</small></div>
