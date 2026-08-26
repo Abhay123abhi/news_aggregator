@@ -45,10 +45,8 @@ public class GeminiAiProvider implements AiProvider {
         );
 
         GeminiResponse response = restClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/v1beta/models/{model}:generateContent")
-                        .queryParam("key", apiKey)
-                        .build(model))
+                .uri("/v1beta/models/{model}:generateContent", model)
+                .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
