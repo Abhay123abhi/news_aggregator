@@ -35,7 +35,7 @@ public class GeminiAiProvider implements AiProvider {
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt)))),
                 "generationConfig", Map.of(
                         "maxOutputTokens", 2048,
-                        "thinkingConfig", Map.of("thinkingLevel", "MINIMAL")
+                        "thinkingConfig", Map.of("thinkingLevel", "minimal")
                 )
         );
 
