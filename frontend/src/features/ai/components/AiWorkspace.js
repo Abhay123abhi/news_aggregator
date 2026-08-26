@@ -101,7 +101,5 @@ export default function AiWorkspace({ articles }) {
         <div><strong>Compare coverage</strong><p>Compare observable emphasis across publishers without guessing bias.</p><button type="button" disabled={loading || !articles?.length} onClick={() => run("Compare coverage", () => aiApi.compare(articles))}>Compare</button></div>
       </div>
     </div>
-
-    <div className="ai-foundation"><span aria-hidden="true">✓</span><p><strong>Source-grounded by design</strong><br />AI receives only the articles already retrieved from Guardian and NYT.</p></div>
   </aside>;
 }
