@@ -1,5 +1,6 @@
 import { useState } from "react";
 import aiApi from "../api/aiApi";
+import "./AiWorkspace.css";
 
 export default function AiWorkspace({ articles }) {
   const [question, setQuestion] = useState("");
