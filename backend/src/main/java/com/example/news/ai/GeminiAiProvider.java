@@ -18,7 +18,7 @@ public class GeminiAiProvider implements AiProvider {
     public GeminiAiProvider(
             RestClient.Builder builder,
             @Value("${ai.gemini.api-key:}") String apiKey,
-            @Value("${ai.gemini.model:gemini-2.5-flash}") String model) {
+            @Value("${ai.gemini.model:gemini-3.6-flash}") String model) {
         this.restClient = builder.baseUrl("https://generativelanguage.googleapis.com").build();
         this.apiKey = apiKey;
         this.model = model;
@@ -33,7 +33,10 @@ public class GeminiAiProvider implements AiProvider {
         Map<String, Object> body = Map.of(
                 "system_instruction", Map.of("parts", List.of(Map.of("text", systemPrompt))),
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt)))),
-                "generationConfig", Map.of("temperature", 0.2, "maxOutputTokens", 700)
+                "generationConfig", Map.of(
+                        "maxOutputTokens", 2048,
+                        "thinkingConfig", Map.of("thinkingLevel", "MINIMAL")
+                )
         );
 
         GeminiResponse response = restClient.post()
@@ -49,15 +52,23 @@ public class GeminiAiProvider implements AiProvider {
         }
 
         Candidate candidate = response.candidates().getFirst();
+        if ("MAX_TOKENS".equals(candidate.finishReason())) {
+            throw new IllegalStateException("AI response exceeded the output limit. Please try again.");
+        }
         if (candidate.content() == null || candidate.content().parts() == null || candidate.content().parts().isEmpty()) {
             throw new IllegalStateException("AI provider returned an empty response");
         }
 
-        return candidate.content().parts().stream()
+        String text = candidate.content().parts().stream()
                 .map(Part::text)
-                .filter(text -> text != null && !text.isBlank())
+                .filter(part -> part != null && !part.isBlank())
                 .reduce((left, right) -> left + "\n" + right)
                 .orElseThrow(() -> new IllegalStateException("AI provider returned an empty response"));
+
+        if (text.isBlank()) {
+            throw new IllegalStateException("AI provider returned an empty response");
+        }
+        return text;
     }
 
     @Override
@@ -71,7 +82,7 @@ public class GeminiAiProvider implements AiProvider {
     }
 
     private record GeminiResponse(List<Candidate> candidates) {}
-    private record Candidate(Content content) {}
+    private record Candidate(Content content, String finishReason) {}
     private record Content(List<Part> parts) {}
     private record Part(String text) {}
 }
