@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import aiApi from "../api/aiApi";
 import "./AiWorkspace.css";
 
@@ -26,6 +26,8 @@ export default function AiWorkspace({ articles }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [enabled, setEnabled] = useState(false);
+  const [activeLabel, setActiveLabel] = useState("");
+  const resultRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -35,8 +37,16 @@ export default function AiWorkspace({ articles }) {
     return () => { active = false; };
   }, []);
 
-  const run = async (action, { clearQuestion = false } = {}) => {
+  useEffect(() => {
+    if ((loading || result || error) && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [loading, result, error]);
+
+  const run = async (label, action, { clearQuestion = false } = {}) => {
     if (!enabled || !articles?.length) return;
+    setActiveLabel(label);
+    setResult("");
     setLoading(true);
     setError("");
     try {
@@ -57,7 +67,7 @@ export default function AiWorkspace({ articles }) {
   const ask = () => {
     const trimmedQuestion = question.trim();
     if (!trimmedQuestion) return;
-    run(() => aiApi.ask(trimmedQuestion, articles), { clearQuestion: true });
+    run("Ask the news", () => aiApi.ask(trimmedQuestion, articles), { clearQuestion: true });
   };
 
   if (!enabled) return <DisabledAiWorkspace />;
@@ -67,10 +77,18 @@ export default function AiWorkspace({ articles }) {
     <h3>Turn headlines into understanding.</h3>
     <p className="ai-intro">Grounded only in the stories currently shown in your feed.</p>
 
+    {(loading || result || error) && <section className={`ai-insight-card ${loading ? "loading" : ""}`} ref={resultRef} aria-live="polite">
+      <div className="ai-insight-head">
+        <div><span className="ai-insight-kicker">✦ AI INSIGHT</span><strong>{activeLabel || "News intelligence"}</strong></div>
+        {!loading && !error && <span className="ai-grounded-badge">Source grounded</span>}
+      </div>
+      {loading ? <div className="ai-thinking"><span /><span /><span /><p>Analyzing the current stories…</p></div> : error ? <p className="ai-error">{error}</p> : <div className="ai-insight-text">{result}</div>}
+    </section>}
+
     <div className="ai-controls">
       <div className="ai-feature ai-action">
         <span>01</span>
-        <div><strong>Daily AI brief</strong><p>Summarize the important developments across sources.</p><button type="button" disabled={loading || !articles?.length} onClick={() => run(() => aiApi.brief(articles))}>Create brief</button></div>
+        <div><strong>Daily AI brief</strong><p>Summarize the important developments across sources.</p><button type="button" disabled={loading || !articles?.length} onClick={() => run("Daily AI brief", () => aiApi.brief(articles))}>Create brief</button></div>
       </div>
 
       <div className="ai-feature ai-action">
@@ -80,13 +98,9 @@ export default function AiWorkspace({ articles }) {
 
       <div className="ai-feature ai-action">
         <span>03</span>
-        <div><strong>Compare coverage</strong><p>Compare observable emphasis across publishers without guessing bias.</p><button type="button" disabled={loading || !articles?.length} onClick={() => run(() => aiApi.compare(articles))}>Compare</button></div>
+        <div><strong>Compare coverage</strong><p>Compare observable emphasis across publishers without guessing bias.</p><button type="button" disabled={loading || !articles?.length} onClick={() => run("Compare coverage", () => aiApi.compare(articles))}>Compare</button></div>
       </div>
     </div>
-
-    {(loading || result || error) && <div className="ai-result" aria-live="polite">
-      {loading ? <p>Analyzing the current stories…</p> : error ? <p className="ai-error">{error}</p> : <p>{result}</p>}
-    </div>}
 
     <div className="ai-foundation"><span aria-hidden="true">✓</span><p><strong>Source-grounded by design</strong><br />AI receives only the articles already retrieved from Guardian and NYT.</p></div>
   </aside>;
