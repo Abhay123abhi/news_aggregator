@@ -108,7 +108,6 @@ export default function App() {
           <div className="source-board-head"><div><span>LIVE INPUTS</span><strong>Source network</strong></div><span className="pulse-ring"><i /></span></div>
           <div className="source-row"><span className="source-icon guardian">G</span><div><strong>The Guardian</strong><small>Global reporting</small></div><span className="connected">Connected</span></div>
           <div className="source-row"><span className="source-icon nyt">T</span><div><strong>The New York Times</strong><small>Article Search</small></div><span className="connected">Connected</span></div>
-          <div className="ai-ready"><span className="spark" aria-hidden="true">✦</span><div><strong>AI-ready foundation</strong><p>Summaries, topic clusters and source comparison fit here next.</p></div></div>
         </aside>
       </section>
 
