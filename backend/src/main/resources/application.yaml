@@ -27,6 +27,11 @@ nyt:
   api:
     key: ${NYT_API_KEY:}
 
+ai:
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
+
 news:
   guardian:
     enabled: true
