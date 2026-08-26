@@ -26,9 +26,14 @@ class AiInsightServiceTest {
             public String modelName() {
                 return "test-model";
             }
+
+            @Override
+            public boolean isConfigured() {
+                return true;
+            }
         };
 
-        AiInsightService service = new AiInsightService(provider);
+        AiInsightService service = new AiInsightService(provider, true, 15);
         List<NewsArticle> articles = List.of(new NewsArticle(
                 "Example headline", "Example description", "https://example.com/story",
                 "Guardian", "2026-08-26T00:00:00Z", null));
