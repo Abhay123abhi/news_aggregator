@@ -1,6 +1,7 @@
 package com.example.news.ai;
 
 import com.example.news.model.NewsArticle;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -23,13 +24,20 @@ public class AiInsightService {
             """;
 
     private final AiProvider aiProvider;
+    private final boolean aiEnabled;
     private final Map<String, CachedInsight> cache = new ConcurrentHashMap<>();
 
-    public AiInsightService(AiProvider aiProvider) {
+    public AiInsightService(AiProvider aiProvider, @Value("${ai.enabled:true}") boolean aiEnabled) {
         this.aiProvider = aiProvider;
+        this.aiEnabled = aiEnabled;
+    }
+
+    public boolean isEnabled() {
+        return aiEnabled;
     }
 
     public AiResult summarize(NewsArticle article) {
+        ensureEnabled();
         String prompt = """
                 Summarize this article in 3 short bullet points, then add one line titled 'Why it matters'.
 
@@ -39,6 +47,7 @@ public class AiInsightService {
     }
 
     public AiResult explainWhyItMatters(NewsArticle article) {
+        ensureEnabled();
         String prompt = """
                 Explain why this story matters to a general reader in at most 100 words.
                 Separate confirmed information from implications. Do not speculate beyond the supplied article.
@@ -49,6 +58,7 @@ public class AiInsightService {
     }
 
     public AiResult dailyBrief(List<NewsArticle> articles) {
+        ensureEnabled();
         List<NewsArticle> limited = safeArticles(articles).stream().limit(8).toList();
         String prompt = """
                 Create a compact news briefing from these articles.
@@ -64,6 +74,7 @@ public class AiInsightService {
     }
 
     public AiResult ask(String question, List<NewsArticle> articles) {
+        ensureEnabled();
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("Question is required");
         }
@@ -84,6 +95,7 @@ public class AiInsightService {
     }
 
     public AiResult compare(List<NewsArticle> articles) {
+        ensureEnabled();
         List<NewsArticle> limited = safeArticles(articles).stream().limit(8).toList();
         String prompt = """
                 Compare how the supplied publishers cover the topic.
@@ -97,6 +109,12 @@ public class AiInsightService {
                 %s
                 """.formatted(formatArticles(limited));
         return generate("compare:" + articlesKey(limited), prompt);
+    }
+
+    private void ensureEnabled() {
+        if (!aiEnabled) {
+            throw new IllegalStateException("AI features are currently disabled");
+        }
     }
 
     private AiResult generate(String key, String prompt) {
