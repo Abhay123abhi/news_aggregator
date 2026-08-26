@@ -28,6 +28,7 @@
     ]
   },
   "devDependencies": {
+    "baseline-browser-mapping": "^2.11.19",
     "eslint-plugin-react-hooks": "^7.0.1"
   }
 }
