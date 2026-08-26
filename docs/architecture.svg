@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Newsroom Intelligence system architecture</title>
+  <desc id="desc">Architecture showing React frontend, Spring Boot backend, Redis cache, Guardian and New York Times providers, Gemini AI, feature flag, and Render deployment.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#151a33"/>
+    </linearGradient>
+    <linearGradient id="api" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#635bff"/>
+      <stop offset="1" stop-color="#8b7dff"/>
+    </linearGradient>
+    <linearGradient id="ai" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="news" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1769aa"/>
+      <stop offset="1" stop-color="#2b8bd1"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#8d96b8"/>
+    </marker>
+    <style>
+      .title{font:700 34px Inter,Segoe UI,Arial,sans-serif;fill:#f7f8ff}.sub{font:400 15px Inter,Segoe UI,Arial,sans-serif;fill:#aab2cf}.h{font:700 18px Inter,Segoe UI,Arial,sans-serif;fill:#fff}.t{font:500 14px Inter,Segoe UI,Arial,sans-serif;fill:#d9def2}.s{font:400 12px Inter,Segoe UI,Arial,sans-serif;fill:#9fa8c7}.darkh{font:700 18px Inter,Segoe UI,Arial,sans-serif;fill:#172033}.darkt{font:500 13px Inter,Segoe UI,Arial,sans-serif;fill:#33415c}.line{stroke:#8d96b8;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.dash{stroke:#8d96b8;stroke-width:2;stroke-dasharray:7 7;fill:none;marker-end:url(#arrow)}.label{font:600 11px Inter,Segoe UI,Arial,sans-serif;fill:#b7bfd8;letter-spacing:.04em}.box{rx:18;filter:url(#shadow)}
+    </style>
+  </defs>
+
+  <rect width="1400" height="900" rx="28" fill="url(#bg)"/>
+  <circle cx="1230" cy="80" r="180" fill="#635bff" opacity=".07"/>
+  <circle cx="120" cy="820" r="220" fill="#20c889" opacity=".05"/>
+
+  <text x="70" y="68" class="title">Newsroom Intelligence — System Architecture</text>
+  <text x="70" y="98" class="sub">Trusted news aggregation first, optional source-grounded AI as a separate capability.</text>
+
+  <!-- Browser -->
+  <rect x="70" y="190" width="245" height="180" class="box" fill="#ffffff"/>
+  <text x="95" y="225" class="darkh">React 18 Frontend</text>
+  <text x="95" y="254" class="darkt">Search + pagination</text>
+  <text x="95" y="278" class="darkt">Guardian / NYT feed</text>
+  <text x="95" y="302" class="darkt">AI Workspace</text>
+  <text x="95" y="326" class="darkt">Light / dark mode</text>
+  <rect x="95" y="340" width="118" height="22" rx="11" fill="#e9fff6"/>
+  <text x="108" y="355" style="font:700 10px Inter,Segoe UI,Arial,sans-serif;fill:#138a62">STATIC ON RENDER</text>
+
+  <!-- Spring -->
+  <rect x="455" y="155" width="330" height="260" class="box" fill="url(#api)"/>
+  <text x="485" y="195" class="h">Spring Boot API · Java 21</text>
+  <text x="485" y="228" class="t">NewsController</text>
+  <text x="485" y="253" class="t">AggregationService</text>
+  <text x="485" y="278" class="t">CacheService</text>
+  <text x="485" y="303" class="t">AiController / AiInsightService</text>
+  <text x="485" y="328" class="t">Provider abstractions + validation</text>
+  <text x="485" y="353" class="t">Actuator health endpoints</text>
+  <rect x="485" y="373" width="180" height="24" rx="12" fill="#ffffff" opacity=".16"/>
+  <text x="500" y="389" style="font:700 10px Inter,Segoe UI,Arial,sans-serif;fill:#fff">DOCKER WEB SERVICE</text>
+
+  <!-- Redis -->
+  <rect x="455" y="530" width="260" height="130" class="box" fill="#ef4444"/>
+  <text x="485" y="568" class="h">Redis</text>
+  <text x="485" y="598" class="t">News search cache</text>
+  <text x="485" y="623" class="t">30-minute TTL</text>
+  <text x="485" y="646" class="s" style="fill:#fee2e2">Cache failure does not stop news</text>
+
+  <!-- External news -->
+  <rect x="930" y="145" width="360" height="205" class="box" fill="#11182a" stroke="#3e4b70"/>
+  <text x="960" y="181" class="h">News Provider Layer</text>
+  <rect x="960" y="205" width="140" height="105" rx="14" fill="url(#news)"/>
+  <text x="982" y="240" class="h">Guardian</text>
+  <text x="982" y="267" class="t">Feign adapter</text>
+  <text x="982" y="292" class="s" style="fill:#dceeff">Provider API</text>
+  <rect x="1120" y="205" width="140" height="105" rx="14" fill="#f3f0e8"/>
+  <text x="1142" y="240" class="darkh">NYT</text>
+  <text x="1142" y="267" class="darkt">Feign adapter</text>
+  <text x="1142" y="292" class="darkt">Article Search</text>
+
+  <!-- AI -->
+  <rect x="900" y="485" width="390" height="250" class="box" fill="url(#ai)"/>
+  <text x="930" y="525" class="h">AI Intelligence Layer</text>
+  <text x="930" y="558" class="t">AiProvider abstraction</text>
+  <text x="930" y="583" class="t">Gemini 3.6 Flash</text>
+  <text x="930" y="608" class="t">Daily brief · Ask the news</text>
+  <text x="930" y="633" class="t">Compare coverage</text>
+  <text x="930" y="658" class="t">Prompt grounding + input limits</text>
+  <rect x="930" y="682" width="140" height="28" rx="14" fill="#0b1020" opacity=".28"/>
+  <text x="947" y="700" style="font:700 11px Inter,Segoe UI,Arial,sans-serif;fill:#fff">AI_ENABLED=true</text>
+  <rect x="1085" y="682" width="170" height="28" rx="14" fill="#0b1020" opacity=".16"/>
+  <text x="1102" y="700" style="font:700 11px Inter,Segoe UI,Arial,sans-serif;fill:#fff">15 req/min guard</text>
+
+  <!-- Render -->
+  <rect x="70" y="570" width="245" height="135" class="box" fill="#20c889"/>
+  <text x="95" y="608" class="h">Render Blueprint</text>
+  <text x="95" y="638" class="t">Static Site</text>
+  <text x="95" y="662" class="t">Docker Web Service</text>
+  <text x="95" y="686" class="t">Key Value / Redis</text>
+
+  <!-- Connections -->
+  <path d="M315 275 C370 275 395 275 455 275" class="line"/>
+  <text x="345" y="257" class="label">/api</text>
+
+  <path d="M785 240 C845 240 870 240 930 240" class="line"/>
+  <text x="824" y="221" class="label">CONCURRENT FETCH</text>
+
+  <path d="M590 415 C590 455 590 485 590 530" class="line"/>
+  <text x="606" y="477" class="label">CACHE-ASIDE</text>
+
+  <path d="M785 330 C850 350 860 525 900 555" class="line"/>
+  <text x="809" y="420" class="label">AI REQUEST</text>
+
+  <path d="M900 615 C840 615 820 385 785 365" class="dash"/>
+  <text x="788" y="590" class="label">GROUNDED RESPONSE</text>
+
+  <path d="M315 625 C365 590 405 565 455 565" class="dash"/>
+  <text x="327" y="574" class="label">MANAGED CACHE</text>
+
+  <!-- Footer principles -->
+  <rect x="70" y="790" width="1220" height="64" rx="16" fill="#ffffff" opacity=".055" stroke="#ffffff" stroke-opacity=".08"/>
+  <text x="95" y="817" class="label">DESIGN PRINCIPLE</text>
+  <text x="95" y="840" class="t">AI is optional. If Gemini is disabled or unavailable, aggregation, search, Redis caching and the normal news experience continue to work.</text>
+</svg>
