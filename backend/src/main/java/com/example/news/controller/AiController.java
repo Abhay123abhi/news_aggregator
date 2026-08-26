@@ -1,0 +1,57 @@
+package com.example.news.controller;
+
+import com.example.news.ai.AiInsightService;
+import com.example.news.model.NewsArticle;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/ai")
+public class AiController {
+
+    private final AiInsightService aiInsightService;
+
+    public AiController(AiInsightService aiInsightService) {
+        this.aiInsightService = aiInsightService;
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<AiStatus> status() {
+        return ResponseEntity.ok(new AiStatus(aiInsightService.isEnabled()));
+    }
+
+    @PostMapping("/summary")
+    public ResponseEntity<AiInsightService.AiResult> summarize(@Valid @RequestBody ArticleRequest request) {
+        return ResponseEntity.ok(aiInsightService.summarize(request.article()));
+    }
+
+    @PostMapping("/why-it-matters")
+    public ResponseEntity<AiInsightService.AiResult> whyItMatters(@Valid @RequestBody ArticleRequest request) {
+        return ResponseEntity.ok(aiInsightService.explainWhyItMatters(request.article()));
+    }
+
+    @PostMapping("/brief")
+    public ResponseEntity<AiInsightService.AiResult> brief(@Valid @RequestBody ArticlesRequest request) {
+        return ResponseEntity.ok(aiInsightService.dailyBrief(request.articles()));
+    }
+
+    @PostMapping("/compare")
+    public ResponseEntity<AiInsightService.AiResult> compare(@Valid @RequestBody ArticlesRequest request) {
+        return ResponseEntity.ok(aiInsightService.compare(request.articles()));
+    }
+
+    @PostMapping("/ask")
+    public ResponseEntity<AiInsightService.AiResult> ask(@Valid @RequestBody AskRequest request) {
+        return ResponseEntity.ok(aiInsightService.ask(request.question(), request.articles()));
+    }
+
+    public record AiStatus(boolean enabled) {}
+    public record ArticleRequest(NewsArticle article) {}
+    public record ArticlesRequest(@NotEmpty List<NewsArticle> articles) {}
+    public record AskRequest(@NotBlank String question, @NotEmpty List<NewsArticle> articles) {}
+}

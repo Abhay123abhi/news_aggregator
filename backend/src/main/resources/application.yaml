@@ -27,6 +27,13 @@ nyt:
   api:
     key: ${NYT_API_KEY:}
 
+ai:
+  enabled: ${AI_ENABLED:true}
+  requests-per-minute: ${AI_REQUESTS_PER_MINUTE:15}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-3.6-flash}
+
 news:
   guardian:
     enabled: true

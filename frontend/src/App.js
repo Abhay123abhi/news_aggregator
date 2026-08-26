@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import newsApi from "./features/news/api/newsApi";
 import SearchForm from "./features/news/components/SearchForm";
 import NewsList from "./features/news/components/NewsList";
+import AiWorkspace from "./features/ai/components/AiWorkspace";
 import "./App.css";
 
 const DEFAULT_QUERY = "latest";
@@ -81,7 +82,7 @@ export default function App() {
         </a>
         <div className="nav-links" aria-label="Page sections">
           <a className="active" href="#stories">Discover</a>
-          <a href="#ai-workspace">AI workspace <span>Soon</span></a>
+          <a href="#ai-workspace">AI workspace <span>Live</span></a>
         </div>
         <button className="theme-toggle" type="button" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
           <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
@@ -94,7 +95,7 @@ export default function App() {
       <section className="hero">
         <div className="hero-copy-block">
           <div className="live-label"><span aria-hidden="true" /> LIVE NEWS DISCOVERY</div>
-          <h1>See the whole story.<br /><em>Find the signal.</em></h1>
+          <h1>See every angle.<br /><em>Understand what matters.</em></h1>
           <p>One focused view of trusted reporting from The Guardian and The New York Times—designed to become your AI-powered news workspace.</p>
           <SearchForm initialKeyword={search.keyword} initialPageSize={search.pageSize} onSearch={handleSearch} loading={loading} />
           <div className="quick-topics" aria-label="Quick topics">
@@ -107,7 +108,6 @@ export default function App() {
           <div className="source-board-head"><div><span>LIVE INPUTS</span><strong>Source network</strong></div><span className="pulse-ring"><i /></span></div>
           <div className="source-row"><span className="source-icon guardian">G</span><div><strong>The Guardian</strong><small>Global reporting</small></div><span className="connected">Connected</span></div>
           <div className="source-row"><span className="source-icon nyt">T</span><div><strong>The New York Times</strong><small>Article Search</small></div><span className="connected">Connected</span></div>
-          <div className="ai-ready"><span className="spark" aria-hidden="true">✦</span><div><strong>AI-ready foundation</strong><p>Summaries, topic clusters and source comparison fit here next.</p></div></div>
         </aside>
       </section>
 
@@ -129,15 +129,7 @@ export default function App() {
             </nav>}
           </div>
 
-          <aside className="ai-panel" id="ai-workspace">
-            <div className="ai-panel-head"><span className="spark" aria-hidden="true">✦</span><span>AI WORKSPACE</span><small>COMING NEXT</small></div>
-            <h3>Turn headlines into understanding.</h3>
-            <p className="ai-intro">The next release can add intelligence without changing this news experience.</p>
-            <div className="ai-feature"><span>01</span><div><strong>Daily AI brief</strong><p>Summarize the important developments across sources.</p></div></div>
-            <div className="ai-feature"><span>02</span><div><strong>Ask the news</strong><p>Question retrieved articles with source-backed answers.</p></div></div>
-            <div className="ai-feature"><span>03</span><div><strong>Compare coverage</strong><p>See how publishers frame the same event differently.</p></div></div>
-            <div className="ai-foundation"><span aria-hidden="true">✓</span><p><strong>Ready for Spring AI + RAG</strong><br />Current articles already form the retrieval layer.</p></div>
-          </aside>
+          <AiWorkspace articles={data.articles || []} />
         </div>
       </section>
     </main>
