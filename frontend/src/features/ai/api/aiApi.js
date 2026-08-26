@@ -7,6 +7,10 @@ const client = axios.create({
 });
 
 const aiApi = {
+  async status() {
+    const { data } = await client.get("/status");
+    return data;
+  },
   async brief(articles) {
     const { data } = await client.post("/brief", { articles });
     return data;
