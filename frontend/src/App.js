@@ -95,7 +95,7 @@ export default function App() {
       <section className="hero">
         <div className="hero-copy-block">
           <div className="live-label"><span aria-hidden="true" /> LIVE NEWS DISCOVERY</div>
-          <h1>See the whole story.<br /><em>Find the signal.</em></h1>
+          <h1>See every angle.<br /><em>Understand what matters.</em></h1>
           <p>One focused view of trusted reporting from The Guardian and The New York Times—designed to become your AI-powered news workspace.</p>
           <SearchForm initialKeyword={search.keyword} initialPageSize={search.pageSize} onSearch={handleSearch} loading={loading} />
           <div className="quick-topics" aria-label="Quick topics">
