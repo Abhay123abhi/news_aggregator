@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import aiApi from "../api/aiApi";
 import "./AiWorkspace.css";
 
@@ -7,9 +7,18 @@ export default function AiWorkspace({ articles }) {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    aiApi.status()
+      .then((response) => active && setEnabled(Boolean(response.enabled)))
+      .catch(() => active && setEnabled(false));
+    return () => { active = false; };
+  }, []);
 
   const run = async (action) => {
-    if (!articles?.length) return;
+    if (!enabled || !articles?.length) return;
     setLoading(true);
     setError("");
     try {
@@ -30,6 +39,8 @@ export default function AiWorkspace({ articles }) {
     if (!question.trim()) return;
     run(() => aiApi.ask(question.trim(), articles));
   };
+
+  if (!enabled) return null;
 
   return <aside className="ai-panel" id="ai-workspace">
     <div className="ai-panel-head"><span className="spark" aria-hidden="true">✦</span><span>AI WORKSPACE</span><small>LIVE</small></div>
